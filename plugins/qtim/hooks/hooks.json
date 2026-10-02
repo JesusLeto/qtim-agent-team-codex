@@ -10,7 +10,7 @@
             "command": "root=$(git rev-parse --show-toplevel 2>/dev/null || pwd); sh \"$PLUGIN_ROOT/hooks/session-start.sh\" \"$root\"",
             "commandWindows": "powershell -NoProfile -ExecutionPolicy Bypass -File \"%PLUGIN_ROOT%\\hooks\\session-start.ps1\"",
             "statusMessage": "Checking qtim charter",
-            "timeout": 5
+            "timeout": 15
           }
         ]
       }
@@ -24,7 +24,7 @@
             "command": "root=$(git rev-parse --show-toplevel 2>/dev/null || pwd); test ! -f \"$root/.codex/team-charter.md\" || printf '%s\\n' '{\"systemMessage\":\"qtim: subagent завершился. Проверь реальные артефакты: изменённые файлы, отчёт, memory/, скриншоты/логи. Если артефактов нет — уточни у agent thread или проверь сам.\"}'",
             "commandWindows": "powershell -NoProfile -ExecutionPolicy Bypass -File \"%PLUGIN_ROOT%\\hooks\\subagent-stop.ps1\"",
             "statusMessage": "Checking qtim subagent handoff",
-            "timeout": 5
+            "timeout": 15
           }
         ]
       },

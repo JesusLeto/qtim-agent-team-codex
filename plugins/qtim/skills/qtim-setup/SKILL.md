@@ -16,7 +16,7 @@ description: Use when the user wants to install or bootstrap qtim for the curren
 - Role templates: `../../agents/architect.toml`, `../../agents/database.toml`, `../../agents/frontend.toml`, `../../agents/testing.toml`, `../../agents/reviewer.toml`, `../../agents/product.toml`.
 - Model policy: `../../reference/model-profiles.md`.
 - Shared mechanics: `../../reference/intake-protocol.md`, `../../reference/orchestration-patterns.md`, `../../reference/independent-review.md`, `../../reference/feature-pipeline.md`.
-- Bundled disciplines: `../qtim-debug-loop/SKILL.md`, `../qtim-prototype/SKILL.md`, `../qtim-brainstorm/SKILL.md`, `../qtim-grill/SKILL.md`, `../qtim-minimal-diff/SKILL.md`; role templates invoke them directly.
+- Bundled disciplines: `../qtim-debug-loop/SKILL.md`, `../qtim-prototype/SKILL.md`, `../qtim-brainstorm/SKILL.md`, `../qtim-grill/SKILL.md`, `../qtim-minimal-diff/SKILL.md`; role templates invoke them directly. Перед генерацией `memory/` прочитай `../qtim-kb-format/SKILL.md`.
 - Hooks: `../../hooks/hooks.json` для plugin-bundled событий; `../../reference/project-hooks.json` читай только при выборе project-level `PostToolUse`.
 - Plugin version для stamps: поле `version` из `../../.codex-plugin/plugin.json`.
 
@@ -50,7 +50,7 @@ description: Use when the user wants to install or bootstrap qtim for the curren
 
 ## Phase 1b: Codex Skills, Plugins, MCP Matching
 
-Layer 0 уже поставляется qtim и доступен во всех проектах: `$qtim-debug-loop`, `$qtim-prototype`, `$qtim-brainstorm`, `$qtim-grill`, `$qtim-minimal-diff`. Не проверяй их как внешние зависимости, не проси установить и не вписывай в колонку optional `skills`: templates ссылаются на них напрямую.
+Layer 0 уже поставляется qtim и доступен во всех проектах: `$qtim-debug-loop`, `$qtim-prototype`, `$qtim-brainstorm`, `$qtim-grill`, `$qtim-minimal-diff`, `$qtim-kb-format`. Не проверяй их как внешние зависимости, не проси установить и не вписывай в колонку optional `skills`. `$qtim-kb-format` нужен только при записи `memory/` или `docs/features/`; он не добавляет отдельный gate к реализации. `$qtim-kb-refresh` вызывается вручную при устаревшей памяти, а не после каждого изменения кода.
 
 В mandatory practices charter зафиксируй единый contract:
 
@@ -83,7 +83,7 @@ Best-effort проверь exact model pairs role templates по локальн�
 **Первый вопрос — роль пользователя:**
 
 - **Developer** — команда разработки: architect/database/frontend/testing/reviewer, workflow `$qtim-team-up` / `$qtim-team-lazy`;
-- **PM/Analyst** — продуктовый трек: роль `qtim-product` и двухтрековый `$qtim-feature` (fast-path brief для простой хотелки или полный PRD -> decomposition/estimate -> plan) с артефактами в `docs/features/`;
+- **PM/Analyst** — продуктовый трек: роль `qtim-product` и двухтрековый `$qtim-feature` (fast-path brief для простой хотелки или полный PRD -> decomposition -> plan; estimate по необходимости) с артефактами в `docs/features/`;
 - **Оба** — обе дорожки в одном charter.
 
 Роль гейтит остальные вопросы. Если charter уже существует и содержит только другой track, предложи дописать недостающий track, не пересоздавая существующий.
@@ -92,7 +92,7 @@ Best-effort проверь exact model pairs role templates по локальн�
 
 - project name for charter;
 - team shape: Compact, Standard, Extended (только dev track);
-- autonomy: design approval first, phase-by-phase confirmation, or full autonomy; для PM track это режим checkpoints конвейера;
+- autonomy: design approval first (default: Approved plan авторизует все фазы без повторных стартовых запросов), phase-by-phase confirmation только по явному выбору пользователя, or full autonomy; для PM track это режим checkpoints конвейера;
 - memory baseline: project map, commands, safety, domain invariants;
 - independent review gate: enabled or disabled (только dev track; при disabled charter получает секцию-заглушку «выключен», а independent-review-требования шаблонов вырезаются из генерируемых агентов — включить позже можно повторным `$qtim-setup`);
 - hooks: plugin-bundled `SessionStart` / `SubagentStop` уже поставляются qtim и управляются через `/hooks`; отдельно спроси про optional project-level `PostToolUse` reminder после edits;
@@ -115,7 +115,7 @@ PM/Analyst-состав команды не спрашивается — он о
 - selected roles and custom agent filenames;
 - обязательный language contract: internal reasoning и сообщения peer agents — на English, любой user-facing output — на Russian;
 - main-thread prerequisite `gpt-5.6-sol` + `ultra`, model/reasoning pair каждой роли и clean-context ADR adversary (Sol+xhigh; max для необратимого + инвариант), плюс план при недоступной pair;
-- memory files;
+- memory files только с подтверждённым содержимым; `$qtim-kb-format` как условное правило записи и `$qtim-kb-refresh` для обнаруженного дрейфа;
 - plugin-bundled hooks, режим screenshots gate и отдельно optional project `PostToolUse`;
 - selected external skills per role и гарантированные qtim disciplines в mandatory practices;
 - any collisions in existing `.codex/agents` or `memory/`;
@@ -138,9 +138,11 @@ PM/Analyst-состав команды не спрашивается — он о
 - отдельный общий блок `## Language` вне track markers с дословным обязательным правилом: `Reason internally and message peer agents in **English** — token economy (Cyrillic ≈1.5–2× more tokens per equivalent content). Keep **user-facing output in Russian**: contract documents, review findings, and anything relayed to the client.`;
 - domain invariants;
 - ADR stress-test — отдельный обязательный блок независимо от настройки code review: каждый ADR до approval проходит `$qtim-grill`, затем новый read-only thread без истории на Sol+xhigh; необратимое + документированный инвариант -> Sol+max; итоговая строка `adr-stress-test:` в ADR, технический пропуск записывается как `skipped` и не считается pass;
-- independent code-review gates — при включённом гейте перенеси в charter без сокращений canonical high-risk matrix из `../../reference/independent-review.md`: security/auth/tenant-scope visibility; money/billing/account state; documented domain invariants/public contracts; data-transform/destructive migrations; critical browser flows; high-risk performance/reliability; другое доказанно hard-to-rollback изменение. Добавь discretionary low-risk с явным `skipped`, prompt shape и integration. При выключенном — секция из одной строки-заглушки «independent review кода выключен (выбор setup); включить — повторный `$qtim-setup`». Рядом явно напиши, что ADR stress-test остаётся включён;
-- working rules: qtim subagent workflows авторизуются явным вызовом skill или прямой просьбой, а сами subagents остаются task-scoped agent threads без скрытой постоянной команды; team-lead работает на Sol+Ultra и может делегировать внутри разрешённого scope, но не меняет execution depth A/B/C/D и не разрешает child agents рекурсивно поднимать команду; main thread проверяет доступные descendants перед повторным spawn и уважает runtime thread cap; qtim не переключает модель/reasoning уже открытого task; use custom agents when loaded, otherwise `worker` fallback with inline role instructions, а built-in `explorer` spawn с Luna+medium; mission — отдельный App-first workflow, где только coordinator создаёт peer tasks и владеет DAG/runtime/integration/final verdict, Approved lazy node получает ровно один local `$qtim-team-lazy` level, writers работают в отдельных worktrees и возвращают один commit; topological integration выполняется так: coordinator cherry-pick-ит commit в disposable transaction worktree, запускает affected gate и только затем под exclusive promotion lock повторно проверяет exact old HEAD, делает ff-only и final-head check в отдельном clean integration worktree; portable evidence получает scoped checkpoint commits в отдельной state worktree и доставляется final bundle commit после APPROVED, resume требует единственного owner/generation; status/resume/stop fail-visible, SessionStart только advisory, auto-archive запрещён; session handoff: незавершённый эпик фиксируется в `memory/epic-state.md` (`$qtim-team-down` пишет, `$qtim-team-up` читает и предлагает продолжить), уроки retro — в `memory/retro-log.md` и `memory/lessons.md`; runtime assumptions проверяются по `../../reference/runtime-compat.md`, но plugin-internal путь в generated charter не переносится;
-- memory layout.
+- independent code-review gates — при включённом гейте перенеси в charter без сокращений canonical high-risk matrix из `../../reference/independent-review.md`: security/auth/tenant-scope visibility; money/billing/account state; documented domain invariants/public contracts; data-transform/destructive migrations; critical browser flows; high-risk performance/reliability; другое доказанно hard-to-rollback изменение. Добавь bounded review contract: первый reviewer pass на фазу, максимум два fix-and-recheck раунда, затронутые проверки и full rerun только при изменении risk surface или расширении поведения за пределы проверенного diff; обязательный security review сохраняется. При выключенном — секция из одной строки-заглушки «independent review кода выключен (выбор setup); включить — повторный `$qtim-setup`». Рядом явно напиши, что ADR stress-test остаётся включён;
+- working rules: qtim subagent workflows авторизуются явным вызовом skill или прямой просьбой, а сами subagents остаются task-scoped agent threads без скрытой постоянной команды; team-lead работает на Sol+Ultra и может делегировать внутри разрешённого scope, но не меняет execution depth A/B/C/D и не разрешает child agents рекурсивно поднимать команду; main thread проверяет доступные descendants перед повторным spawn и уважает runtime thread cap; qtim не переключает модель/reasoning уже открытого task; Approved plan авторизует последующие фазы без повторных стартовых запросов, кроме явно выбранного phase-by-phase режима и новых существенных развилок; явные ограничения пользователя и Approved scope старше рекомендаций review, blocker вне scope требует решения владельца; use custom agents when loaded, otherwise `worker` fallback with inline role instructions, а built-in `explorer` spawn с Luna+medium; mission — отдельный App-first workflow, где только coordinator создаёт peer tasks и владеет DAG/runtime/integration/final verdict, Approved lazy node получает ровно один local `$qtim-team-lazy` level, writers работают в отдельных worktrees и возвращают один commit; topological integration выполняется так: coordinator cherry-pick-ит commit в disposable transaction worktree, запускает affected gate и только затем под exclusive promotion lock повторно проверяет exact old HEAD, делает ff-only и final-head check в отдельном clean integration worktree; portable evidence получает scoped checkpoint commits в отдельной state worktree и доставляется final bundle commit после APPROVED, resume требует единственного owner/generation; status/resume/stop fail-visible, SessionStart только advisory, auto-archive запрещён; session handoff: незавершённый эпик фиксируется в `memory/epic-state.md` (`$qtim-team-down` пишет, `$qtim-team-up` читает и предлагает продолжить), уроки retro — в `memory/retro-log.md` и `memory/lessons.md`; при записи `memory/` или `docs/features/` используется `$qtim-kb-format`, при обнаруженном дрейфе предлагается `$qtim-kb-refresh`; runtime assumptions проверяются по `../../reference/runtime-compat.md`, но plugin-internal путь в generated charter не переносится;
+- memory layout: read-first пути в `memory/` условны, если файла ещё нет;
+  `decisions.md`, `review-report.md` и `bug-log.md` создаются только при первой
+  реальной записи по `$qtim-kb-format`, не как пустые шаблоны.
 
 Track-блоки — между HTML-маркерами, по выбранным ролям:
 
@@ -154,7 +156,11 @@ Track-блоки — между HTML-маркерами, по выбранным
 <!-- qtim:track:pm:end -->
 ```
 
-PM track block начни пометкой: «Производная self-contained сводка; долговечный канон артефактов принадлежит установленному `$qtim-feature` reference, ручные изменения сверять через `$qtim-update`». Затем перенеси суть `../../reference/feature-pipeline.md`: полный трек и fast-path `feature-brief.md`; Intake checkpoint с выбором трека; общий checkpoint decomposition + estimate; selective dev-consult только по реально затронутым слоям; grounded S/M/L/XL; вертикальные work items/фазы с одним DRI и contributing ролями; в полном треке — layer estimates, которые DRI синтезирует в item estimate, в fast-path — main-thread evidence fallback без обязательного fan-out; expand-contract для широкого механического рефактора; статусы Draft -> Approved -> In Development -> Done; обязательный блок `Что запускать дальше` с полями recommendation/why/topology/command/alternative и shape-based выбором direct / `$qtim-team-lazy` / `$qtim-team-up` / `$qtim-mission`; размер не выбирает workflow; recommendation ничего не запускает без нового явного разрешения; полностью Approved mission graph с готовыми base/integration target, scopes, budgets и gates получает команду `запусти`, а unresolved writer/lazy/runtime choice — `preview`; указатель в `memory/decisions.md` — последний atomic completion marker Stage 6, а `Approved` plan/brief без указателя означает resume с Handoff. При PM-only составе — также пометку из Phase 2 о добавлении dev track перед реализацией.
+PM track block начни пометкой: «Производная self-contained сводка; долговечный канон артефактов принадлежит установленному `$qtim-feature` reference, ручные изменения сверять через `$qtim-update`». Затем перенеси суть `../../reference/feature-pipeline.md`: полный трек и fast-path `feature-brief.md`; Intake checkpoint с выбором трека; после PRD checkpoint допускается терминальный `Результат: PRD-only` без decomposition/estimate/plan и execution recommendation; checkpoint decomposition обязателен, `estimate.md` по умолчанию пропускается и нужен только для выбора исполнителя, сроков/бюджета или явного запроса; XL item всё равно разрезается; selective dev-consult только по затронутым слоям; grounded S/M/L/XL при оценке; вертикальные work items/фазы с одним DRI и contributing ролями; fast-path использует main-thread evidence без обязательного fan-out; expand-contract для широкого механического рефактора; статусы Draft -> Approved -> In Development -> Done -> Archived (после проверенного Done, свидетельства слияния и решения владельца, без удаления долговечных PRD/plan/brief); `.work/` — временные файлы фичи; блок `Что запускать дальше` обязателен только для Approved plan/brief, с полями recommendation/why/topology/command/alternative и shape-based выбором direct / `$qtim-team-lazy` / `$qtim-team-up` / `$qtim-mission`; размер не выбирает workflow; recommendation ничего не запускает без нового явного разрешения; полностью Approved mission graph с готовыми base/integration target, scopes, budgets и gates получает команду `запусти`, а unresolved writer/lazy/runtime choice — `preview`; указатель в `memory/decisions.md` — последний atomic completion marker Stage 6, а `Approved` plan/brief без указателя означает resume с Handoff. При PM-only составе — также пометку из Phase 2 о добавлении dev track перед реализацией.
+
+Переход `Done -> Archived` и удаление `.work/` требуют evidence влития и
+решения владельца, если оно ещё не дано в сессии. Одно сворачивание команды
+не запускает очистку; `Done` остаётся допустимым статусом до архивации.
 
 Re-run rule: при повторном setup заменяй содержимое только между маркерами своего track; чужой track block и ручные правки пользователя вне маркеров не трогай. В общей roles table добавляй недостающие поддерживаемые роли и точечно дополняй распознанные qtim-owned mandatory-practice cells; неизвестные строки, дополнительные колонки и ручной текст сохраняй. Роли не удаляй. Неоднозначную строку или локально изменённый managed block покажи как collision/pending в плане, не угадывай и не заменяй весь charter.
 
@@ -231,7 +237,7 @@ Project `.codex/hooks.json` создавай только если пользо�
 
 Codex hooks требуют trust review через `/hooks`; упомяни это в handoff.
 
-### `.gitignore` для mission runtime
+### `.gitignore` для временного состояния
 
 Убедись, что корневой `.gitignore` содержит ровно одну активную строку
 `.codex/qtim-runtime/`. Если файла нет — создай только с этой строкой; если есть —
@@ -240,10 +246,14 @@ files не удаляй автоматически: покажи их и ост�
 
 Runtime registry хранит opaque thread/host/cursor handles и никогда не коммитится.
 Portable `memory/missions/<slug>/` под это правило не попадает.
+При PM track добавь одну строку `docs/features/**/.work/`: здесь живут только
+временные процессные файлы фичи. Существующие tracked файлы не удаляй при
+setup; покажи их в плане миграции.
 
 ### `memory/`
 
-Создай `memory/MEMORY.md` как индекс и выбранные файлы:
+Создай `memory/MEMORY.md` как короткий индекс и только выбранные файлы с
+подтверждённым содержимым по `$qtim-kb-format`:
 
 - `memory/project-map.md`;
 - `memory/commands.md`;
@@ -252,6 +262,11 @@ Portable `memory/missions/<slug>/` под это правило не попад�
 - `memory/decisions.md`;
 - `memory/review-report.md`;
 - `memory/bug-log.md`.
+
+Не создавай пустые шаблоны или ссылки индекса на несуществующие файлы.
+`memory/decisions.md` — краткий реестр указателей, не пересказ ADR/фич.
+Повторный setup обновляет проверенный факт на месте, а не добавляет вторую
+версию. Метка `checked` меняется только после проверки файла целиком.
 
 Файлы `memory/epic-state.md`, `memory/retro-log.md` и `memory/lessons.md` setup не создаёт — их создают `$qtim-team-down` и `$qtim-team-retro` по мере надобности; упомяни их назначение в `MEMORY.md`. Для `memory/retro-log.md` зафиксируй, что retro также пишет туда только доказанно сработавшие `minimal-diff:` follow-up с source, trigger evidence, одним owner и проверяемым next action. Каталог `memory/missions/<slug>/` setup также не создаёт: его заводит только явно запущенная mission через `$qtim-mission` с глаголом исполнения или недвусмысленную просьбу провести несколько Codex peer tasks как одну mission для portable spec, validated receipts, локальных решений и final verification.
 
@@ -281,6 +296,8 @@ qtim-owned contract держи строго между маркерами:
 - qtim workflow запускается из новой задачи Codex на `gpt-5.6-sol` + `ultra`;
   каждый созданный ADR проходит clean-context Sol stress-test до approval.
 - `$qtim-update` мигрирует generated state; `$qtim-doctor` диагностирует drift.
+- Перед записью `memory/` или `docs/features/` вызови `$qtim-kb-format`;
+  при обнаруженном дрейфе предложи `$qtim-kb-refresh`.
 
 ## Language
 
@@ -297,7 +314,7 @@ role TOML и spawn prompt по-прежнему требуют открыть н
 
 Рядом со managed block добавь ссылки на `$qtim-team-up`, `$qtim-team-lazy`, `$qtim-mission`,
 `$qtim-team-down`, `$qtim-team-retro` (до team-down), `$qtim-update`, `$qtim-onboard`,
-`$qtim-doctor`, а при PM track — `$qtim-feature` и `docs/features/<slug>/`.
+`$qtim-doctor`, `$qtim-kb-refresh`, а при PM track — `$qtim-feature` и `docs/features/<slug>/`.
 
 Если есть legacy `CLAUDE.md`, не переписывай его. Можно добавить в `AGENTS.md` заметку, что Codex читает `AGENTS.md`, а `CLAUDE.md` является legacy source only if the repo already uses it.
 
@@ -315,8 +332,10 @@ role TOML и spawn prompt по-прежнему требуют открыть н
 - generated files do not reference plugin-internal paths (`../../reference/...`, `../../agents/...`) — вся нужная механика должна быть в charter или `memory/`;
 - track-маркеры `qtim:track:*` в charter парные; при re-run оба track block целы, PM block содержит fast/full tracks, общий checkpoint, selective consult, vertical slicing с DRI/contributing roles и topology-based блок «Что запускать дальше» для direct/team-lazy/team-up/mission без auto-start;
 - `memory/MEMORY.md` объясняет, что `memory/missions/<slug>/` создаётся `$qtim-mission` по мере надобности, а не setup;
+- `memory/MEMORY.md` ссылается только на реально созданные файлы; перед записью применён `$qtim-kb-format`, а generated `AGENTS.md` указывает на него условно;
 - корневой `.gitignore` содержит `.codex/qtim-runtime/`, runtime registry не
   отслеживается Git;
+- при PM track `.gitignore` содержит `docs/features/**/.work/`;
 - при выключенном independent code review: charter содержит секцию-заглушку «выключен», в сгенерированных TOML нет требований risk-based code review, но обязательный ADR stress-test в charter и architect TOML сохранён;
 - version stamps на месте: `<!-- qtim-version: ... -->` в charter, `# qtim-version: ...` в каждом сгенерированном TOML, версия совпадает с `../../.codex-plugin/plugin.json`;
 - `AGENTS.md` содержит ровно одну пару `qtim:contract` markers, managed block краткий, ссылки ведут на существующие файлы.

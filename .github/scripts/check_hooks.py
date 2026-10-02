@@ -348,7 +348,9 @@ def run_command(command, cwd, payload):
             input=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
-            timeout=5,
+            # Windows starts PowerShell for commandWindows on every invocation;
+            # cold CI runners can exceed the previous five-second harness limit.
+            timeout=15 if os.name == "nt" else 5,
             check=False,
             env=env,
         )

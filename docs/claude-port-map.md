@@ -1,10 +1,10 @@
 # Карта портирования: Codex-версия -> Claude Code-версия
 
-Этот репозиторий (Codex-native) — **источник смысла**: продуктовые фичи рождаются и обкатываются здесь. Claude Code-версия — отдельный проект с собственной структурой: upstream [toiiia/qtim-agent-team](https://github.com/toiiia/qtim-agent-team), рабочий клон — `../qtim-agent-team-claude` (форк `trushhh777/qtim-agent-team-1`, remote `upstream` -> toiiia). Правки транслируются **семантически** — переписыванием под конвенции целевого репозитория, не копированием текста.
+Этот репозиторий — Codex-native форк [JesusLeto/qtim-agent-team-codex](https://github.com/JesusLeto/qtim-agent-team-codex) исходной адаптации [trushhh777/qtim-agent-team](https://github.com/trushhh777/qtim-agent-team). Claude Code-версия — отдельный проект: upstream [toiiia/qtim-agent-team](https://github.com/toiiia/qtim-agent-team), пользовательский форк [JesusLeto/qtim-agent-team](https://github.com/JesusLeto/qtim-agent-team). Исторический процесс ниже описывает направление Codex → Claude до 2.14; изменения 2.15 портированы обратно из аудита Claude-форка. Правки транслируются **семантически** под конвенции целевого репозитория, без копирования runtime-команд.
 
-## Процесс порта
+## Исторический процесс порта до 2.14
 
-1. Фича реализуется и обкатывается здесь (Codex-версия), деплой в `trushhh777/qtim-agent-team`.
+1. Фича реализовывалась и обкатывалась в исходной Codex-версии, деплой в `trushhh777/qtim-agent-team`.
 2. В клоне `../qtim-agent-team-claude`: `git fetch upstream && git merge --ff-only upstream/main` (владелец toiiia активно мержит — main уходит вперёд), ветка `feat/<фича>` от `main`.
 3. Переписать фичу под конвенции Claude-версии по таблице ниже, читая актуальные файлы upstream (владелец адаптирует влитое — не полагаться на нашу последнюю версию).
 4. Прогнать их CI локально: `python3 .github/scripts/check_placeholders.py`, `check_links.py`, `node .github/scripts/check_workflows.mjs plugins/qtim/workflows/*.mjs`, JSON-манифесты, grep канона рантайма.
@@ -29,7 +29,7 @@
 | CI | `.github/scripts/`: check_placeholders, check_skills, check_skill_refs (полный `$qtim-*` token + fail-closed surfaces), check_links, check_codex_agents (+ model-слаг), check_hooks (schema + runtime output) | check_placeholders (+ examples/), check_skill_refs (`qtim:<имя>` + command namespace), check_links, check_workflows.mjs, grep канона | белый список плейсхолдеров `{{...}}` одинаковый (8 имён); reference namespace и hook validators runtime-specific |
 | Golden-пример | `examples/fullstack-codex/` + `check_golden.py` | `examples/nuxt-supabase/` — при правке шаблонов/структуры charter обновить эталон | Оба примера семантические и runtime-specific; текст между ними не копировать |
 
-## Соответствие фич (состояние на 2026-07-30)
+## Соответствие фич
 
 | Фича | Codex | Claude | Статус |
 |---|---|---|---|
@@ -49,6 +49,7 @@
 | Runtime contract, atomic PM handoff, read-only review, tester-owned server, screenshot enforcement, migration/golden CI | 2.11.0 (порт общих принципов ИЗ Claude) | 1.12.0 | `.claude/rules`, Agent Teams flags, Task API и agent-memory не переносились; Codex-эквиваленты — managed `AGENTS.md`, custom-agent sandbox, task-scoped threads, plugin hooks и durable `memory/` |
 | Cross-dialog Mission Plan: topology routing, peer-task DAG, node-local lazy, isolated writers, verified integration, final verifier и recovery | 2.12.0 | — | Codex App-specific implementation; возможный Claude-порт должен заново спроектировать peer-task/runtime state поверх актуальных Claude primitives, а не копировать `create_thread`, worktree handles или hook schemas |
 | Minimal-diff, role/generated-state delivery, roster audit, retro marker harvesting, debug call-site inventory, skill-reference CI и ponytail MIT notice | 2.13.0 (семантический порт ИЗ Claude) | 1.13.0 ([887975f](https://github.com/toiiia/qtim-agent-team/commit/887975fb3324506a64428311d79e533579b1c70d)) | Сохранены продуктовые contracts лестницы/protected zones/self-check, recommendation-only review, additive setup, pending migration, doctor/retro/debug loops и legal notice. Не перенесены `.claude/*`, slash commands, `qtim:<имя>`/command fallback, Agent Teams/`Task*`, agent-memory, Standalone-copy и Claude golden layout; Codex equivalents — `$qtim-*`, `.codex/*`, atomic model pairs, task-scoped threads, `memory/` и `examples/fullstack-codex/` |
+| Ограниченные recheck, приоритет Approved scope, `$qtim-kb-format` и `$qtim-kb-refresh`, PRD-only/optional estimate, жизненный цикл Done → Archived | 2.15.0 (этот форк; семантический порт ИЗ Claude и аудита) | 1.14.0–1.15.0 в форке JesusLeto | Codex использует `$qtim-*`, `.codex/team-charter.md`, `AGENTS.md` и проверку git-базы; Claude `Task*`, `.claude/*` и agent-memory не копируются. Обновление existing generated state описано в `upgrade-notes.md`; существующая память не переписывается автоматически. |
 
 ## Правила
 

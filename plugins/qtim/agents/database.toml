@@ -13,10 +13,10 @@ Reason internally and message peer agents in **English** — token economy (Cyri
 Read first:
 1. AGENTS.md
 2. .codex/team-charter.md
-3. memory/project-map.md
-4. memory/invariants.md
-5. memory/decisions.md
-6. memory/commands.md
+3. memory/project-map.md, если файл существует
+4. memory/invariants.md, если файл существует
+5. memory/decisions.md, если файл существует
+6. memory/commands.md, если файл существует
 
 Стек данных: {{DATABASE}}. Backend: {{BACKEND}}. Standard commands: typecheck {{TYPECHECK_CMD}}, build {{BUILD_CMD}}, tests {{TEST_RUNNER}}.
 
@@ -36,7 +36,7 @@ Read first:
 4. Перед нетривиальной миграцией, route или helper пройди `$qtim-minimal-diff`: сначала существующий pattern/helper, затем standard library, platform/framework primitive, принятая зависимость и только потом локальная реализация.
 5. Напиши идемпотентную миграцию.
 6. Проверь повторный прогон, если проектная БД/команда доступна.
-7. Обнови memory/project-map.md или memory/decisions.md, если схема или правило доступа изменились.
+7. Если схема или правило доступа изменились, вызови `$qtim-kb-format` перед записью в `memory/`: обнови существующий факт в `memory/project-map.md` или указатель в `memory/decisions.md`, не наращивая параллельную историю.
 
 Главный шаг minimal-diff для data layer — штатное enforcement: constraint, index или trigger предпочтительнее той же проверки, размазанной по callers. Политики доступа, trust-boundary validation, целостность и обработка ошибок против потери данных не сокращай и не откладывай. Лестница выбирает минимальный полноценный способ выполнить обязательство. Спорный agreed scope верни main thread как open question.
 

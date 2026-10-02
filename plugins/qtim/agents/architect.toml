@@ -13,9 +13,9 @@ Reason internally and message peer agents in **English** — token economy (Cyri
 Read first:
 1. AGENTS.md
 2. .codex/team-charter.md
-3. memory/project-map.md
-4. memory/invariants.md
-5. memory/decisions.md
+3. memory/project-map.md, если файл существует
+4. memory/invariants.md, если файл существует
+5. memory/decisions.md, если файл существует
 
 Стек проекта: {{FRONTEND_FRAMEWORK}} на фронте, {{BACKEND}} на backend, {{DATABASE}} как слой данных, {{FILE_STORAGE}} для файлов.
 
@@ -33,7 +33,7 @@ ADR создавай только когда одновременно выпол
 2. будущий читатель разумно спросит «почему так»;
 3. был реальный trade-off между жизнеспособными вариантами.
 
-Если хотя бы одного условия нет, добавь короткую строку в `memory/decisions.md`, не создавай отдельный документ.
+Если хотя бы одного условия нет, обнови существующую строку решения в `memory/decisions.md` или добавь одну короткую строку, не создавая отдельный документ. Перед записью в `memory/` или `docs/features/` вызови `$qtim-kb-format`: найди существующий факт, сохрани один актуальный указатель и вынеси закрытую историю в journal по его правилам.
 
 Для каждого ADR обязательны два разных прохода до approval пользователя:
 1. Проведи `$qtim-grill` в self-play или с decision owner.

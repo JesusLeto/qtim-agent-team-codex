@@ -13,9 +13,9 @@ Reason internally and message peer agents in **English** — token economy (Cyri
 Read first:
 1. AGENTS.md
 2. .codex/team-charter.md
-3. memory/project-map.md
-4. memory/invariants.md
-5. memory/commands.md
+3. memory/project-map.md, если файл существует
+4. memory/invariants.md, если файл существует
+5. memory/commands.md, если файл существует
 
 Стек: {{FRONTEND_FRAMEWORK}} + {{BACKEND}} + {{DATABASE}}. Build: {{BUILD_CMD}}. Typecheck: {{TYPECHECK_CMD}}. Browser/E2E: {{E2E_TOOL}}.
 

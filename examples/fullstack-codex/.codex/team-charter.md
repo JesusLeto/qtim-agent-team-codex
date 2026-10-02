@@ -1,4 +1,4 @@
-<!-- qtim-version: 2.14.0 -->
+<!-- qtim-version: 2.15.0 -->
 # qtim team charter — fullstack golden
 
 ## Roles and model matrix
@@ -34,20 +34,34 @@ commits in a separate state worktree; a clean-context verifier owns
 APPROVED/NOT APPROVED.
 `status/resume/stop` fail-visible; SessionStart is advisory and never auto-resumes
 or auto-archives mission tasks.
+Явные ограничения пользователя и Approved scope старше рекомендаций review;
+out-of-scope finding идёт в отдельную задачу, обязательный blocker возвращается
+владельцу. Approved plan авторизует следующие фазы без повторного стартового
+запроса, кроме явно выбранного phase-by-phase режима или новой развилки.
+Перед записью `memory/` или `docs/features/` вызови `$qtim-kb-format`; при
+обнаруженном дрейфе предложи `$qtim-kb-refresh`.
 
 <!-- qtim:track:dev:start -->
 ## Dev track
 
-Implement → test → independent review. Blocking browser evidence is configured in
-`.codex/screenshots-gate.json`.
+Implement → test → independent review. Первый reviewer pass на фазу полный;
+затем максимум два fix-and-recheck раунда с затронутыми gates. Полный повтор
+нужен при изменении risk surface или расширении поведения за проверенный diff;
+обязательный security/ADR review сохраняется. Blocking browser evidence is
+configured in `.codex/screenshots-gate.json`.
 <!-- qtim:track:dev:end -->
 
 <!-- qtim:track:pm:start -->
 ## PM track
 
 Производная self-contained сводка канона `reference/feature-pipeline.md`: fast
-`feature-brief.md` или full PRD/decomposition/estimate/plan, vertical slices with DRI.
-Каждый Approved artifact заканчивается блоком «Что запускать дальше»: recommendation,
+`feature-brief.md` или full PRD/decomposition/plan, vertical slices with DRI.
+После PRD возможен терминальный `PRD-only` без плана запуска; `estimate.md`
+нужен по запросу или когда выбираются исполнитель, срок или бюджет. XL item
+разрезается. После проверенного `Done` и свидетельства слияния `Archived`
+допустим по решению владельца без удаления долговечных PRD/plan/brief;
+временные материалы живут в `.work/` и очищаются отдельно по его решению.
+Каждый Approved plan/brief заканчивается блоком «Что запускать дальше»: recommendation,
 why, topology, command, alternative. Direct/team-lazy/team-up/mission выбираются по
 execution topology, а не размеру; recommendation ничего не запускает без нового
 явного разрешения. Approved graph с готовыми base/integration target, scopes,

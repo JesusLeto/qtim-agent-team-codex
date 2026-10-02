@@ -38,10 +38,13 @@ for marker in (
     "$qtim-mission", "recommendation ничего не запускает", "integration target",
     "integrate topologically", "clean-context verifier",
     "$qtim-minimal-diff", "recommendation-only",
+    "Approved scope", "fix-and-recheck", "$qtim-kb-format",
+    "$qtim-kb-refresh", "PRD-only", "estimate.md", "Archived",
 ):
     need(marker in charter, f"charter missing {marker}")
 for marker in (
     "$qtim-mission", "worktree", "topologically", "workers не создают descendants",
+    "$qtim-kb-format", "$qtim-kb-refresh",
 ):
     need(marker in agents_md, f"AGENTS missing {marker}")
 
@@ -49,6 +52,10 @@ gitignore = (example / ".gitignore").read_text(encoding="utf-8").splitlines()
 need(
     gitignore.count(".codex/qtim-runtime/") == 1,
     "golden .gitignore must contain one qtim runtime entry",
+)
+need(
+    gitignore.count("docs/features/**/.work/") == 1,
+    "golden .gitignore must contain one feature workspace entry",
 )
 
 expected = {
@@ -82,6 +89,8 @@ for filename, policy in expected.items():
         need("$qtim-minimal-diff" in text, f"{filename} has no minimal-diff contract")
     if filename == "reviewer.toml":
         need(payload.get("sandbox_mode") == "read-only", "reviewer is not read-only")
+        for marker in ("Approved scope", "fix-and-recheck", "$qtim-kb-format"):
+            need(marker in text, f"reviewer has no {marker} contract")
     if filename == "testing.toml":
         need("npm run dev" in text, "tester has no dev command")
 

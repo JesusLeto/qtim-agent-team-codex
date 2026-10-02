@@ -66,6 +66,9 @@ jobs:
       - name: Semantic golden project валиден
         run: python3 .github/scripts/check_golden.py
 
+      - name: Knowledge scanner запускается на текущем Git base
+        run: python3 plugins/qtim/skills/qtim-kb-refresh/scripts/kb_scan.py scan --base HEAD > /dev/null
+
       - name: Относительные ссылки в plugins/ не биты
         run: python3 .github/scripts/check_links.py
 
