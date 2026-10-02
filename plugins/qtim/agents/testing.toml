@@ -1,6 +1,6 @@
 name = "qtim-testing"
 description = "qtim testing role: real-browser, E2E, regression, console/network capture, screenshots, bug localization, and test evidence."
-model = "gpt-5.6-terra"
+model = "gpt-6-luna"
 model_reasoning_effort = "medium"
 nickname_candidates = ["Tester", "QA", "Browser QA"]
 developer_instructions = '''

@@ -1,19 +1,19 @@
-<!-- qtim-version: 2.15.0 -->
+<!-- qtim-version: 2.15.1 -->
 # qtim team charter — fullstack golden
 
 ## Roles and model matrix
 
 | Role | Agent | Mandatory practices |
 |---|---|---|
-| architect | `qtim-architect` | `$qtim-brainstorm` before ADR; compare design options with `$qtim-minimal-diff`; clean-context Sol ADR stress-test |
+| architect | `qtim-architect` | `$qtim-brainstorm` before ADR; compare design options with `$qtim-minimal-diff`; clean-context Astra ADR stress-test |
 | database | `qtim-database` | `$qtim-minimal-diff` before non-trivial implementation; `$qtim-debug-loop` for non-trivial bugs |
 | frontend | `qtim-frontend` | `$qtim-minimal-diff` before non-trivial implementation; `$qtim-debug-loop` for non-trivial bugs |
 | testing | `qtim-testing` | `$qtim-debug-loop` for flaky reproduction |
 | reviewer | `qtim-reviewer` | `$qtim-minimal-diff` excess is recommendation-only; protected-zone/invariant/gate violations block |
 | product | `qtim-product` | evidence-grounded vertical slicing |
 
-Team-lead `gpt-5.6-sol` + `ultra`; architect/reviewer Sol+xhigh;
-database/frontend/product Sol+high; testing Terra+medium; explorer Luna+medium.
+Team-lead `gpt-6-astra` + `ultra`; architect/reviewer `gpt-6-astra` + `xhigh`;
+database/frontend/product `gpt-6-sol` + `high`; testing/explorer `gpt-6-luna` + `medium`.
 
 ## Language
 
@@ -22,7 +22,7 @@ Reason internally and message peer agents in **English** — token economy (Cyri
 ## Working rules
 
 Main thread owns fan-out. Role outputs are advisory until verified. Reviewer is mechanically
-read-only. Tester owns `npm run dev`. ADRs receive a clean-context Sol adversary.
+read-only. Tester owns `npm run dev`. ADRs receive a clean-context Astra adversary.
 Only an explicit executable `$qtim-mission` or an unambiguous request to conduct
 multiple Codex peer tasks as one mission may authorize visible tasks; a single
 ordinary task/dialog or planning-only request may not. Mission workers do not

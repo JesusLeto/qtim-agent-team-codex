@@ -11,12 +11,12 @@ except ImportError:
 
 REQUIRED = {"name", "description", "developer_instructions"}
 EXPECTED_MODEL_POLICIES = {
-    "architect.toml": ("gpt-5.6-sol", "xhigh"),
-    "database.toml": ("gpt-5.6-sol", "high"),
-    "frontend.toml": ("gpt-5.6-sol", "high"),
-    "product.toml": ("gpt-5.6-sol", "high"),
-    "reviewer.toml": ("gpt-5.6-sol", "xhigh"),
-    "testing.toml": ("gpt-5.6-terra", "medium"),
+    "architect.toml": ("gpt-6-astra", "xhigh"),
+    "database.toml": ("gpt-6-sol", "high"),
+    "frontend.toml": ("gpt-6-sol", "high"),
+    "product.toml": ("gpt-6-sol", "high"),
+    "reviewer.toml": ("gpt-6-astra", "xhigh"),
+    "testing.toml": ("gpt-6-luna", "medium"),
 }
 EXPECTED_MARKERS = {
     "architect.toml": [
@@ -28,7 +28,7 @@ EXPECTED_MARKERS = {
         "реальный trade-off",
         "expand-contract",
         "ADR готов к независимому stress-test",
-        "adr-stress-test: sol-adversary",
+        "adr-stress-test: astra-adversary",
         "adr-stress-test: pending",
         "$qtim-minimal-diff",
         "Новый слой и новая зависимость — архитектурное решение",
@@ -67,13 +67,9 @@ LANGUAGE_CONTRACT = (
 )
 REASONING_EFFORTS = {"none", "minimal", "low", "medium", "high", "xhigh", "max", "ultra"}
 MODEL_REASONING_EFFORTS = {
-    "gpt-5.6-sol": {"low", "medium", "high", "xhigh", "max", "ultra"},
-    "gpt-5.6-terra": {"low", "medium", "high", "xhigh", "max", "ultra"},
-    "gpt-5.6-luna": {"low", "medium", "high", "xhigh", "max"},
-    "gpt-5.5": {"low", "medium", "high", "xhigh"},
-    "gpt-5.4": {"low", "medium", "high", "xhigh"},
-    "gpt-5.4-mini": {"low", "medium", "high", "xhigh"},
-    "gpt-5.3-codex-spark": {"low", "medium", "high", "xhigh"},
+    "gpt-6-astra": {"low", "medium", "high", "xhigh", "max", "ultra"},
+    "gpt-6-sol": {"low", "medium", "high", "xhigh", "max", "ultra"},
+    "gpt-6-luna": {"low", "medium", "high", "xhigh", "max"},
 }
 FORBIDDEN = [
     ".claude",
@@ -130,10 +126,10 @@ for path in paths:
         )
 
     m = re.search(r'^model\s*=\s*"([^"]*)"', text, re.MULTILINE)
-    if m and not re.fullmatch(r"gpt-\d+\.\d+(-[a-z0-9-]+)?", m.group(1)):
+    if m and not re.fullmatch(r"gpt-(?:\d+\.\d+(?:-[a-z0-9-]+)?|\d+-[a-z0-9-]+)", m.group(1)):
         bad.append(
-            f"{path}: `model = \"{m.group(1)}\"` — слаг без минорной версии или не gpt-семейство; "
-            "боевой инцидент: `gpt-5` не существует, субагенты не стартуют"
+            f"{path}: `model = \"{m.group(1)}\"` — нужен полный variant slug; "
+            "короткий alias вроде `gpt-6` не запускает роль"
         )
 
     reasoning = re.search(
@@ -188,20 +184,21 @@ if missing_templates:
 
 CONTRACT_MARKERS = {
     pathlib.Path("plugins/qtim/reference/model-profiles.md"): [
-        "`gpt-5.6-sol` + `ultra`",
-        "`gpt-5.6-sol` + `xhigh`",
-        "`gpt-5.6-terra` + `medium`",
-        "`gpt-5.6-luna` + `medium`",
+        "`gpt-6-astra` + `ultra`",
+        "`gpt-6-astra` + `xhigh`",
+        "`gpt-6-sol` + `high`",
+        "`gpt-6-luna` + `medium`",
+        "`gpt-6-astra` + `xhigh`; `max`",
     ],
     pathlib.Path("plugins/qtim/reference/independent-review.md"): [
         "fork_turns = \"none\"",
-        "`gpt-5.6-sol` и reasoning `xhigh`",
-        "`adr-stress-test: sol-adversary (xhigh|max)",
+        "`gpt-6-astra` и reasoning `xhigh`",
+        "`adr-stress-test: astra-adversary (xhigh|max)",
         "не выключается setup-настройкой independent review",
     ],
     pathlib.Path("plugins/qtim/skills/qtim-setup/SKILL.md"): [
-        "team-lead `gpt-5.6-sol` + `ultra`",
-        "built-in explorer `gpt-5.6-luna` + `medium`",
+        "team-lead `gpt-6-astra` + `ultra`",
+        "built-in explorer `gpt-6-luna` + `medium`",
         "ADR stress-test остаётся включён",
     ],
 }

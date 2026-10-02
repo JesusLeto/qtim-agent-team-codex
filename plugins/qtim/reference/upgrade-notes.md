@@ -4,6 +4,51 @@
 
 Правило ведения: при каждом релизе, меняющем сгенерированное состояние, добавляй секцию сверху. Секции хранятся newest-first, но `$qtim-update` всегда применяет попавшие в диапазон шаги oldest -> newest (снизу вверх по файлу). Если релиз не меняет сгенерированное состояние, добавляй секцию с пометкой «миграция не требуется».
 
+## 2.15.1
+
+Что нового в сгенерированном состоянии: явная GPT-6 матрица сохраняет прежнюю
+иерархию ролей. Team-lead, architect, reviewer и ADR adversary используют
+`gpt-6-astra`; database, frontend и product — `gpt-6-sol`; testing и built-in
+explorer — `gpt-6-luna`. Reasoning не меняется: lead `ultra`, architect/reviewer
+`xhigh`, database/frontend/product `high`, testing/explorer `medium`, adversary
+`xhigh` или `max` по прежнему правилу риска.
+
+Миграция с 2.15.0:
+
+1. До записи покажи scoped diff и проверь доступность **каждой exact pair** в
+   текущем Codex runtime. Если нужной пары нет, предложи обновить Codex или
+   согласовать поддерживаемый atomic override; не удаляй поля модели, не
+   подставляй alias и оставь миграцию `pending`. CLI catalog и App runtime могут
+   различаться: проверяй поверхность, где команда будет работать.
+2. Сопоставь только однозначно qtim-owned role TOML со stamp `2.15.0`, строкой
+   roster charter, filename и `name`. Меняй только узнаваемую прежнюю default
+   atomic pair: architect/reviewer `gpt-5.6-sol`+`xhigh` →
+   `gpt-6-astra`+`xhigh`; database/frontend/product `gpt-5.6-sol`+`high` →
+   `gpt-6-sol`+`high`; testing `gpt-5.6-terra`+`medium` →
+   `gpt-6-luna`+`medium`. Отличающаяся полная пара — пользовательский override:
+   сохрани её после проверки catalog и подтверждения владельца. Half-pair и
+   неоднозначный файл оставь `pending`; foreign agents не меняй.
+3. В распознанном ADR region `qtim-architect` точечно замени прежний
+   `gpt-5.6-sol`+`xhigh|max` на `gpt-6-astra`+`xhigh|max`, а
+   `adr-stress-test: sol-adversary` — на `astra-adversary`. Сохрани смысл
+   обязательного clean-context stress-test и ручной текст вне region.
+4. В общей model matrix и рабочих правилах charter замени только qtim-owned
+   defaults: team-lead `gpt-6-astra`+`ultra`, присутствующие роли по пункту 2,
+   explorer `gpt-6-luna`+`medium`, adversary `gpt-6-astra`+`xhigh|max` и
+   marker `astra-adversary`. Dev/PM track и ручные колонки/строки сохрани.
+   В `AGENTS.md` меняй только qtim-managed строку между
+   `qtim:contract:start/end`: новый lead `gpt-6-astra`+`ultra` и
+   clean-context Astra stress-test. Пользовательский текст вне markers не трогай.
+5. Не меняй `memory/`, `docs/features/`, hooks, screenshot policy, `.gitignore`
+   или runtime registry: смена моделей не мигрирует их содержимое. Проверяй
+   TOML, полные пары, read-only reviewer, язык, парность track/contract markers,
+   отсутствие GPT-5.6 в **текущей qtim-owned policy** и отсутствие plugin-internal
+   путей в generated state. Исторические записи этого файла остаются историей.
+6. Только после всех применимых `applied` или `compatible override confirmed`
+   обнови charter stamp и stamps сопоставленных role TOML до `2.15.1`. При
+   `pending` оставь stamps на `2.15.0`; после смены TOML открой новую задачу
+   Codex, чтобы роли загрузились заново.
+
 ## 2.15.0
 
 Что нового в сгенерированном состоянии:

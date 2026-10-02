@@ -1,6 +1,6 @@
 # Independent Review Protocol For Codex
 
-> In Codex, qtim does not call "Codex as an external second opinion." Codex is the host. Independence is created by a separate read-only agent thread with a narrow prompt and clean context. For ADR stress-test qtim also fixes a quality floor: GPT-5.6 Sol.
+> In Codex, qtim does not call "Codex as an external second opinion." Codex is the host. Independence is created by a separate read-only agent thread with a narrow prompt and clean context. For ADR stress-test qtim also fixes a quality floor: GPT-6 Astra.
 
 ## Principles
 
@@ -46,10 +46,10 @@ Main thread, а не architect:
 
 1. Получает draft ADR и минимальный context pack: сам ADR, затронутые инварианты из charter/`memory/`, точные file paths для проверки.
 2. Поднимает новый read-only agent thread **без истории основного task** (`fork_turns = "none"` или ближайший runtime-эквивалент clean context). Используй runtime/custom-agent sandbox enforcement, если он доступен; prompt-only read-only не называй механическим gate.
-3. Фиксирует модель `gpt-5.6-sol` и reasoning `xhigh`. Если решение одновременно необратимо и затрагивает документированный инвариант — `max`.
+3. Фиксирует модель `gpt-6-astra` и reasoning `xhigh`. Если решение одновременно необратимо и затрагивает документированный инвариант — `max`.
 4. Просит исходить из презумпции «решение некорректно, пока обратное не подтверждено» и искать нарушения инвариантов, нерассмотренные альтернативы, rollback/data-loss/security failure modes и open questions.
 5. Передаёт findings architect, который проверяет их по коду и обновляет решение.
-6. Требует в ADR строку `adr-stress-test: sol-adversary (xhigh|max) — N findings, M учтено`. При технической недоступности thread — `adr-stress-test: skipped — <reason>`.
+6. Требует в ADR строку `adr-stress-test: astra-adversary (xhigh|max) — N findings, M учтено`. При технической недоступности thread — `adr-stress-test: skipped — <reason>`.
 
 После исправлений architect сверяет замечания точечно. Если правка изменила
 архитектурную гарантию, границу безопасности, документированный инвариант или

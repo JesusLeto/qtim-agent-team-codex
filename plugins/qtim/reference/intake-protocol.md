@@ -16,7 +16,7 @@
 поставь `Blocked` и верни владельцу конкретную развилку. Проверка не даёт
 автоматического права расширить задачу.
 
-Codex main thread остаётся team-lead. qtim subagent workflow авторизуется явной просьбой пользователя или вызовом qtim skill. Agent threads живут в scope текущего task и могут быть восстановлены только когда runtime их показывает; скрытой постоянной команды нет. qtim workflow рассчитан на main thread `gpt-5.6-sol` + `Ultra`: этот профиль даёт proactive delegation внутри уже разрешённого scope, но не расширяет задачу и не выбирает execution depth вместо main thread.
+Codex main thread остаётся team-lead. qtim subagent workflow авторизуется явной просьбой пользователя или вызовом qtim skill. Agent threads живут в scope текущего task и могут быть восстановлены только когда runtime их показывает; скрытой постоянной команды нет. qtim workflow рассчитан на main thread `gpt-6-astra` + `Ultra`: этот профиль даёт proactive delegation внутри уже разрешённого scope, но не расширяет задачу и не выбирает execution depth вместо main thread.
 
 ## Pipeline
 
@@ -33,7 +33,7 @@ Codex main thread остаётся team-lead. qtim subagent workflow автор�
    и третий уровень запрещены. Recommendation ничего не запускает.
 4. Decide whether design approval is required.
 5. For non-trivial work, run `$qtim-brainstorm` and produce a design brief. Create a separate ADR only when the ADR filter is satisfied; otherwise record the decision as one registry line.
-6. Если создан ADR, до user approval проведи обязательный clean-context stress-test: main thread поднимает read-only `gpt-5.6-sol` + `xhigh` adversary без истории; для необратимого решения, затрагивающего документированный инвариант, — `max`. Architect верифицирует findings и фиксирует `adr-stress-test:` в ADR. Эта проверка не зависит от optional risk-based code review.
+6. Если создан ADR, до user approval проведи обязательный clean-context stress-test: main thread поднимает read-only `gpt-6-astra` + `xhigh` adversary без истории; для необратимого решения, затрагивающего документированный инвариант, — `max`. Architect верифицирует findings и фиксирует `adr-stress-test:` в ADR. Эта проверка не зависит от optional risk-based code review.
 7. Проверь доменную предпосылку, от которой зависит весь план: подтверди её
    кодом, данными или владельцем до approval. Техническая проверка не заменяет
    ответ владельца на невыводимое из репозитория бизнес-правило.
@@ -98,9 +98,9 @@ Use plan/approval features when available. Otherwise ask for direct confirmation
 
 `$qtim-grill` — self-play/decision-owner pass. Он полезен, но не независим: модель и контекст уже заякорены на выбранном решении.
 
-Для каждого настоящего ADR main thread перед approval запускает второй pass по `independent-review.md`: отдельный read-only thread, `fork_turns = "none"` или эквивалент, model `gpt-5.6-sol`, effort `xhigh` (`max`, если решение одновременно необратимо и затрагивает документированный инвариант). Передавай только ADR, инварианты и проверяемые пути, не историю рассуждений. Итоговая строка:
+Для каждого настоящего ADR main thread перед approval запускает второй pass по `independent-review.md`: отдельный read-only thread, `fork_turns = "none"` или эквивалент, model `gpt-6-astra`, effort `xhigh` (`max`, если решение одновременно необратимо и затрагивает документированный инвариант). Передавай только ADR, инварианты и проверяемые пути, не историю рассуждений. Итоговая строка:
 
-`adr-stress-test: sol-adversary (xhigh|max) — N findings, M учтено`
+`adr-stress-test: astra-adversary (xhigh|max) — N findings, M учтено`
 
 Если runtime не дал запустить оппонента, запиши `skipped — <reason>` и явно сообщи пользователю: попытка обязательна, пропуск не считается пройденным гейтом.
 

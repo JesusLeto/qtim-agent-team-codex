@@ -7,8 +7,8 @@
 
 Подробный контракт: `.codex/team-charter.md`; роли: `.codex/agents/`; решения: `memory/`.
 qtim workflow запускается только явным skill/delegation request. Main thread владеет fan-out,
-проверяет advisory outputs и запускается на `gpt-5.6-sol` + `ultra`. Каждый ADR проходит
-clean-context Sol adversary. `$qtim-mission` с глаголом исполнения или недвусмысленная
+проверяет advisory outputs и запускается на `gpt-6-astra` + `ultra`. Каждый ADR проходит
+clean-context Astra adversary. `$qtim-mission` с глаголом исполнения или недвусмысленная
 просьба провести несколько Codex peer tasks как одну mission создаёт видимые задачи
 только после явного запуска Approved graph; mission workers не создают descendants;
 writers изолированы worktree, commits integrate topologically через transaction

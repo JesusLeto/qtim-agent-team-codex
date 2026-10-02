@@ -22,13 +22,13 @@ All content is primarily Russian. The repository has no build step and no applic
 - Use `.codex/team-charter.md` and `.codex/agents/*.toml` for generated target-project state.
 - Plugin layer owns qtim `SessionStart` / `SubagentStop`; project `.codex/hooks.json` is only for optional `PostToolUse` or pre-existing user hooks. Preserve foreign hook entries and use canonical nested command schema.
 - Charter is track-aware: dev and PM tracks live between `qtim:track:*` markers; generation must never clobber the other track.
-- qtim subagent workflows require an explicit skill invocation or direct delegation request. Main team-lead runs on `gpt-5.6-sol` + `ultra` and may proactively delegate only inside that authorized scope. Agent threads are task-scoped and recoverable only when the runtime exposes them; do not imply hidden persistent team state.
+- qtim subagent workflows require an explicit skill invocation or direct delegation request. Main team-lead runs on `gpt-6-astra` + `ultra` and may proactively delegate only inside that authorized scope. Agent threads are task-scoped and recoverable only when the runtime exposes them; do not imply hidden persistent team state.
 - The main thread owns fan-out. Child agents do not recursively spawn qtim teams; respect the runtime thread cap and batch independent work when needed.
 - Main thread is the team lead; subagent outputs are advisory until checked.
 - Durable project decisions belong in `memory/`, not only in chat.
 - Before writing `memory/` or feature process artifacts, load `$qtim-kb-format`; use `$qtim-kb-refresh` for drift in existing knowledge.
-- Independent review is a separate read-only Codex agent thread, not "Codex as an external consultant". Every created ADR gets a clean-context Sol adversary before approval, regardless of the optional risk-based code-review setting.
-- Role templates use explicit atomic GPT-5.6 `model` + `model_reasoning_effort` pairs; never write `model = "inherit"`. Preserve user overrides during migration.
+- Independent review is a separate read-only Codex agent thread, not "Codex as an external consultant". Every created ADR gets a clean-context Astra adversary before approval, regardless of the optional risk-based code-review setting.
+- Role templates use explicit atomic GPT-6 `model` + `model_reasoning_effort` pairs; never write `model = "inherit"`. Preserve user overrides during migration.
 - Bundled disciplines are role-agnostic practices, not orchestration engines: do not put main-thread fan-out, persistent-team assumptions, or qtim workflow ownership inside `qtim-debug-loop`, `qtim-prototype`, `qtim-brainstorm`, `qtim-grill`, or `qtim-minimal-diff`.
 - When adapting a third-party MIT skill, add the complete applicable copyright and permission notice to `plugins/qtim/THIRD_PARTY_NOTICES.md`; an attribution link in `SKILL.md` alone is insufficient.
 - On every model-generation upgrade, audit role templates for compensating step-by-step recipes. Remove recipes that newer models no longer need, but preserve structural invariants, risk-based gates, durable memory, and verification contracts.

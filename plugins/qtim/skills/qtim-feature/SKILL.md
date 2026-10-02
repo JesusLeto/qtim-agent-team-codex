@@ -19,12 +19,12 @@ grounded-оценки и vertical slicing живёт в `../../reference/feature
 
 1. Прочитай `.codex/team-charter.md`. Если файла или PM track marker `<!-- qtim:track:pm:start -->` нет, остановись и предложи `$qtim-setup`.
 2. Прочитай `../../reference/feature-pipeline.md` и `../../reference/intake-protocol.md`.
-3. Прочитай `../../reference/model-profiles.md`. qtim team-lead должен работать на `gpt-5.6-sol` + `ultra`; не переключай уже открытый task скрыто. Если runtime exposes другой профиль, остановись до fan-out и попроси открыть новый task на Sol/Ultra. `Ultra` не расширяет scope и не отменяет checkpoints.
+3. Прочитай `../../reference/model-profiles.md`. qtim team-lead должен работать на `gpt-6-astra` + `ultra`; не переключай уже открытый task скрыто. Если runtime exposes другой профиль, остановись до fan-out и попроси открыть новый task на Astra/Ultra. `Ultra` не расширяет scope и не отменяет checkpoints.
 4. Определи kebab-case slug.
 5. Если `docs/features/<slug>/` существует, прочитай статусы и «Историю изменений». `feature-brief.md` означает fast-path, `prd.md`/полный набор — полный трек. `Archived` завершён; `Done` сначала проверь по gates. Approved PRD-only с указателем — завершённое планирование до новой просьбы продолжить. Иначе продолжи с первого незавершённого обязательного артефакта, не начинай заново. У Stage 6 своего артефакта нет: её completion marker — строка-указатель на slug в `memory/decisions.md`. Approved план, brief или PRD-only без указателя -> resume со Stage 6.
 6. Перед первой записью в `docs/features/` или `memory/` прочитай `$qtim-kb-format`; передай его правила каждому пишущему агенту. Уже существующие артефакты меняй на месте и сжимай их историю, не дописывай копии.
 
-Если custom agent не стартует именно из-за model pair, не удаляй пару и не заменяй её inheritance молча. Отличающийся override сохрани; продолжи через `worker` с inline role instructions только на явно подтверждённой доступной pair. Built-in `explorer` используй на `gpt-5.6-luna` + `medium`; не угадывай slug и не считай auth/network ошибку несовместимостью модели.
+Если custom agent не стартует именно из-за model pair, не удаляй пару и не заменяй её inheritance молча. Отличающийся override сохрани; продолжи через `worker` с inline role instructions только на явно подтверждённой доступной pair. Built-in `explorer` используй на `gpt-6-luna` + `medium`; не угадывай slug и не считай auth/network ошибку несовместимостью модели.
 
 Все prompts и follow-ups для consult/subagent ролей пиши на English. Артефакты `docs/features/**`, checkpoints и всё, что передаётся пользователю, пиши на Russian по обязательному project language contract.
 
@@ -107,7 +107,7 @@ Approved получает только `decomposition.md`. При изменен
 
 Сначала ставь решения с высокой неопределённостью (данные, API-контракты, UX-развилки), механическую доводку — позже. Широкий рефактор планируй expand-contract.
 
-Если architect создал ADR, **до** финального checkpoint main thread запускает новый read-only thread без истории на `gpt-5.6-sol` + `xhigh`; при сочетании «необратимо + затронут документированный инвариант» — `max`. Findings возвращаются architect для проверки, а ADR получает строку `adr-stress-test:`. Исправления и повторные проходы ограничены `../../reference/independent-review.md`; optional code-review gate этот шаг не отключает.
+Если architect создал ADR, **до** финального checkpoint main thread запускает новый read-only thread без истории на `gpt-6-astra` + `xhigh`; при сочетании «необратимо + затронут документированный инвариант» — `max`. Findings возвращаются architect для проверки, а ADR получает строку `adr-stress-test:`. Исправления и повторные проходы ограничены `../../reference/independent-review.md`; optional code-review gate этот шаг не отключает.
 
 **Checkpoint:** финальное approval; Status -> Approved.
 

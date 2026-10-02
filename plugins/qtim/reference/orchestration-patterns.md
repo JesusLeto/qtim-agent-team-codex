@@ -2,7 +2,7 @@
 
 > Этот файл читает team-lead. Subagents получают только свой bounded prompt и ссылки на `.codex/team-charter.md` / `memory/`.
 
-qtim subagent workflow запускается по явному вызову skill или прямой просьбе пользователя. Team-lead profile — `gpt-5.6-sol` + `Ultra`: пользователь выбирает его при старте task, а qtim не меняет уже открытую сессию скрыто. `Ultra` может proactively делегировать внутри разрешённого scope, но не расширяет задачу.
+qtim subagent workflow запускается по явному вызову skill или прямой просьбе пользователя. Team-lead profile — `gpt-6-astra` + `Ultra`: пользователь выбирает его при старте task, а qtim не меняет уже открытую сессию скрыто. `Ultra` может proactively делегировать внутри разрешённого scope, но не расширяет задачу.
 
 Все prompts, follow-ups и иные сообщения peer agents пиши на English. Внутреннее рассуждение ролей также ведётся на English; user-facing документы, findings и всё, что передаётся пользователю, остаётся на Russian. Это обязательный language contract из project `AGENTS.md`/charter, а не настройка отдельного workflow.
 
@@ -48,7 +48,7 @@ security checks, acceptance gates и ADR adversary остаются в силе.
 
 ## Model, Reasoning And Concurrency
 
-- Перед fan-out проверь, что main task работает на обязательном для qtim профиле `gpt-5.6-sol` + `ultra`, когда runtime exposes metadata; иначе останови workflow и попроси пользователя открыть task с этим профилем. Role defaults и fallback описаны в `model-profiles.md`.
+- Перед fan-out проверь, что main task работает на обязательном для qtim профиле `gpt-6-astra` + `ultra`, когда runtime exposes metadata; иначе останови workflow и попроси пользователя открыть task с этим профилем. Role defaults и fallback описаны в `model-profiles.md`.
 - `Ultra` относится только к team-lead и не означает mode D, не отменяет disjoint write scopes и не является причиной спавнить весь roster. `Max` зарезервирован для clean-context ADR adversary при сочетании «необратимо + затронут инвариант».
 - Main thread владеет agent graph: спавнит дополнительные роли, проверяет descendants перед повторным spawn, переиспользует доступные threads и закрывает завершённые.
 - Child agents возвращают запрос на дополнительную роль main thread, а не спавнят qtim descendants сами.
@@ -59,7 +59,7 @@ security checks, acceptance gates и ADR adversary остаются в силе.
   `execution: lazy` вызывает `$qtim-team-lazy` для своей bounded node. Node lead
   возвращает один aggregated receipt, local subagents не создают descendants, а
   feedback loop эскалируется coordinator.
-- Built-in `explorer` запускай явно на `gpt-5.6-luna` + `medium`; при model override используй `fork_turns = "none"` (или минимальный поддерживаемый fork) и сам передай bounded context в prompt. Постоянные custom roles берут exact pair из TOML.
+- Built-in `explorer` запускай явно на `gpt-6-luna` + `medium`; при model override используй `fork_turns = "none"` (или минимальный поддерживаемый fork) и сам передай bounded context в prompt. Постоянные custom roles берут exact pair из TOML.
 - Учитывай фактический thread cap runtime. Если независимых работ больше свободных slots, запускай batches; сначала закрывай больше не нужные Done threads. Не повышай nesting depth ради удобства — рекурсивный fan-out повышает расход и ухудшает предсказуемость.
 
 ## Patterns
@@ -110,7 +110,7 @@ Rules:
 
 ### 5. Independent Review / Adversarial Verification
 
-Каждый ADR до approval проходит через новый read-only thread без истории на `gpt-5.6-sol` + `xhigh`; для необратимого решения, задевающего документированный инвариант, — `max`. Это постоянный design gate, независимо от настройки code review.
+Каждый ADR до approval проходит через новый read-only thread без истории на `gpt-6-astra` + `xhigh`; для необратимого решения, задевающего документированный инвариант, — `max`. Это постоянный design gate, независимо от настройки code review.
 
 Для фактического diff действует каноническая high-risk matrix из `independent-review.md`: security/auth/tenant-scope visibility; money/billing/account state; documented domain invariants/public contracts; data-transform/destructive migrations; critical browser flows; high-risk performance/reliability; другое доказанно hard-to-rollback изменение. При любом совпадении запрос review обязателен. Для low-risk diff отдельный thread опционален; пропуск фиксируется в review report.
 
