@@ -1,12 +1,12 @@
 {
   "name": "qtim",
-  "version": "2.14.0",
-  "description": "Codex-native bootstrap and orchestration kit for project-specific subagent teams and explicit cross-dialog missions. Adds a minimal-complete solution discipline, platform-loaded runtime contract, mechanically read-only review, shape-based PM handoff, App capability detection, isolated writer worktrees, validated DAG receipts, topological commit integration, recovery, migration CI, and semantic generated-state validation.",
+  "version": "2.15.0",
+  "description": "Codex-native team orchestration with bounded verification, knowledge-base refresh, project-specific agents, risk-based review, PM planning, and explicit cross-dialog missions.",
   "author": {
     "name": "Антон Фокин"
   },
-  "homepage": "https://github.com/trushhh777/qtim-agent-team",
-  "repository": "https://github.com/trushhh777/qtim-agent-team",
+  "homepage": "https://github.com/JesusLeto/qtim-agent-team-codex",
+  "repository": "https://github.com/JesusLeto/qtim-agent-team-codex",
   "license": "MIT",
   "keywords": [
     "codex",

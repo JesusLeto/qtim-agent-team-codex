@@ -22,6 +22,11 @@ Use Codex subagent threads and custom agents. Do not assume a hidden persistent 
 4. Проверь `memory/epic-state.md` (его пишет `$qtim-team-down` при незавершённом эпике): если файл есть и эпик не закрыт — после подъёма команды покажи резюме и предложи продолжить с зафиксированного места, восстановив задачи из «В полёте» в видимом плане с их ролями.
 5. Если задача ссылается на фичу из `docs/features/<slug>/`, прочитай `plan.md` + `prd.md` полного трека или единый `feature-brief.md` fast-path как источник scope и acceptance criteria. До работы переведи плановый документ и связанные артефакты в `In Development`; только после gates — в `Done`. Отклонения с обоснованием и новые edge cases фиксируй в «Истории изменений» выбранного планового документа.
 
+Approved план вместе с явными ограничениями пользователя — граница реализации.
+Выполняй утверждённые фазы подряд; новый checkpoint нужен только для новой
+продуктовой развилки, необратимого действия вне approval, изменения scope или
+исчерпанного бюджета доработок. Старт следующей фазы уже разрешён планом.
+
 ## Decision Matrix
 
 Use full team-up only for mode D:
@@ -95,15 +100,19 @@ For implementation agents, remind them that other agents may edit in parallel an
 
 1. Run design first for non-trivial work: architect produces brief/ADR and open questions.
 2. Если architect создал ADR, **до** user approval main thread запускает отдельного read-only adversary без истории (`fork_turns = "none"` или runtime-эквивалент) на `gpt-5.6-sol` + `xhigh`; необратимое решение, затрагивающее документированный инвариант, -> `max`. Передай только ADR, инварианты и проверяемые paths. Верни findings architect для верификации и не продолжай к approval, пока в ADR нет `adr-stress-test:` со счётчиком или честным `skipped — <reason>`. Optional independent code review не выключает этот шаг.
-3. Ask for user approval before irreversible or ambiguous work, following `intake-protocol.md`.
+3. Ask for user approval before irreversible or ambiguous work not covered by the Approved plan, following `intake-protocol.md`.
 4. Parallelize only disjoint work scopes; `Ultra` не отменяет этот gate и не является причиной увеличить fan-out.
 5. Route implementation by ownership.
 6. Tester verifies with real browser for UI changes.
-7. Reviewer runs final gates. При активной секции independent review в charter он классифицирует фактический diff по canonical high-risk matrix: security/auth/tenant-scope visibility; money/billing/account state; documented domain invariants/public contracts; data-transform/destructive migrations; critical browser flows; high-risk performance/reliability; другое доказанно hard-to-rollback изменение. Любое совпадение требует отдельного read-only review thread; low-risk diff допускает зафиксированный `skipped (low-risk diff)`. Секции нет или она помечена «выключен» -> не требуй **code-review** gate; ADR stress-test из шага 2 остаётся обязательным.
+7. Reviewer делает первый проход на каждой фазе и выполняет её gates. Подтверждённые блокеры проходят не больше двух fix-and-recheck раундов по `independent-review.md`: targeted check и затронутые тесты; полный reviewer повторяется только при изменении зоны риска. Остался блокер — `Blocked` с результатами попыток и решением, которое нужно от владельца. Находки вне Approved scope оформляй отдельной задачей; если они блокируют acceptance/security gate, сообщи конфликт как `Blocked`, не расширяя scope молча. При активной секции independent review в charter классифицируй фактический diff по canonical high-risk matrix: security/auth/tenant-scope visibility; money/billing/account state; documented domain invariants/public contracts; data-transform/destructive migrations; critical browser flows; high-risk performance/reliability; другое доказанно hard-to-rollback изменение. Любое совпадение требует отдельного read-only review thread; low-risk diff допускает зафиксированный `skipped (low-risk diff)`. Секции нет или она помечена «выключен» -> не требуй **code-review** gate; ADR stress-test из шага 2 остаётся обязательным.
 8. Main agent integrates and checks all results. Subagent output is input, not authority.
 9. Commit durable decisions to `memory/`.
 
 ## Reporting
+
+Каждый промежуточный отчёт начни строкой `сделано: ... / в работе: ... /
+дальше: ... / коммитов: N`. Покажи фактическое состояние фаз, чтобы статус
+реализации был виден даже во время review.
 
 Final report should be result-first:
 

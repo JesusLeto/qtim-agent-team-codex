@@ -4,6 +4,85 @@
 
 Правило ведения: при каждом релизе, меняющем сгенерированное состояние, добавляй секцию сверху. Секции хранятся newest-first, но `$qtim-update` всегда применяет попавшие в диапазон шаги oldest -> newest (снизу вверх по файлу). Если релиз не меняет сгенерированное состояние, добавляй секцию с пометкой «миграция не требуется».
 
+## 2.15.0
+
+Что нового в сгенерированном состоянии:
+
+- charter и managed block `AGENTS.md` задают ограниченный review loop, приоритет
+  Approved scope, продолжение утверждённых фаз без повторного стартового запроса и
+  условное правило `$qtim-kb-format` перед записью `memory/` или `docs/features/`;
+- PM track допускает терминальный PRD-only результат и пропуск `estimate.md`,
+  определяет `Archived` после проверенного `Done`, свидетельства слияния и
+  решения владельца; хранит временные материалы в игнорируемой
+  `docs/features/<slug>/.work/`;
+- generated роли читают `memory/` только если файл есть и применяют
+  `$qtim-kb-format` перед записью; reviewer получает scoped recheck и аккуратное
+  ведение `memory/review-report.md`. Содержимое уже созданных `memory/` и
+  `docs/features/` не мигрируется автоматически.
+
+Миграция с 2.14.0:
+
+1. До записи покажи scoped diff по charter, managed `AGENTS.md`, каждому
+   затрагиваемому role TOML и `.gitignore`. Докажи qtim ownership charter stamp,
+   парными `qtim:track:*` markers и `qtim:contract` markers. Для role TOML
+   требуй согласованные charter row, filename, `name = "qtim-..."` и исходный
+   stamp `2.14.0` по fail-closed правилам 2.13.0–2.14.0. Foreign/ambiguous
+   файлы, ручные правки внутри target region и неединственные anchors оставь
+   `pending`; не заменяй файл целиком. Уже полный target region — `applied`.
+2. В общей working-rules части charter добавь точечно: явные ограничения
+   пользователя и Approved scope старше рекомендаций review; находку вне scope
+   вынеси в отдельную задачу, а невозможность выполнить обязательную приёмку или
+   security gate пометь `Blocked` для решения владельца. Approved plan
+   авторизует следующие фазы без повторного стартового запроса, кроме явно
+   выбранного phase-by-phase режима или новой существенной развилки. Если
+   independent code review включён, добавь первый reviewer pass на фазу и
+   максимум два fix-and-recheck раунда: recheck охватывает исправленный риск и
+   затронутые gates; полный повтор нужен только при расширении поведения за
+   проверенный diff или изменении risk surface. Сохрани прежнюю canonical
+   high-risk matrix, обязательный security/ADR review и выбранный review toggle.
+3. В PM track charter, если он есть, замени только распознанную qtim-owned сводку
+   full/fast pipeline: после PRD возможен терминальный `PRD-only` без
+   decomposition/estimate/plan и рекомендации запуска; decomposition остаётся
+   обязательной для планируемой реализации, `estimate.md` нужен только по
+   запросу либо для выбора исполнителя, срока или бюджета; XL work item всё
+   равно разрезается. Добавь `Archived` после проверенного `Done` и
+   свидетельства слияния, по решению владельца. Долговечные PRD/plan/brief
+   сохраняются; очистка `docs/features/<slug>/.work/` — отдельное решение
+   владельца в том же пакете. Существующие `Done` остаются валидными.
+   Не трогай dev track и ручной текст вне PM markers.
+4. В managed block `AGENTS.md` добавь короткое условное правило: «Перед записью
+   `memory/` или `docs/features/` вызови `$qtim-kb-format`; при обнаруженном
+   дрейфе предложи `$qtim-kb-refresh`». Дополнительно назови
+   `$qtim-kb-refresh` среди доступных команд. Сохрани текст вне markers
+   byte-for-byte; не запускай refresh автоматически после каждого edit.
+5. В однозначно сопоставленных qtim role TOML пометь каждый `memory/*` в
+   `Read first` как «если создан»: setup больше не создаёт пустые файлы.
+   Пишущим в `memory/` или `docs/features/` ролям добавь вызов
+   `$qtim-kb-format` перед записью и сжатие вместо append-only истории;
+   product role получает PRD-only, optional estimate и лимит истории.
+   В `qtim-reviewer` добавь additive contract: Approved scope, отдельные
+   out-of-scope рекомендации, первый полный pass, scoped recheck с лимитом
+   двух fix-and-recheck раундов, полный повтор только при изменении risk
+   surface, read-only память через main thread. Не меняй `sandbox_mode`,
+   model pair, ручные инструкции и неизвестные роли.
+6. Только для PM track добавь в корневой `.gitignore` ровно одну активную строку
+   `docs/features/**/.work/`, сохранив остальное содержимое и порядок. Если
+   `.work/` уже отслеживается Git, не удаляй файлы автоматически: оставь
+   migration pending и покажи точные пути. Для dev-only проекта шаг не нужен.
+7. Не создавай пустые `memory/decisions.md`, `review-report.md` или
+   `bug-log.md`; не переписывай существующие memory, feature artifacts, ADR,
+   `.work/` и внешние хранилища. Их приведение к `$qtim-kb-format` выполняется
+   отдельным, явно выбранным refresh после read-only отчёта и проверки базы.
+   В `memory/MEMORY.md` добавляй только проверенный указатель на существующий
+   файл, если он отсутствует и действительно нужен; иначе не меняй индекс.
+8. Проверь TOML parse, парность markers, high-risk/review toggle, full/fast/PRD-only
+   PM contract, одну `.work/` ignore-строку при PM track и сохранение ручного
+   текста/model pairs. Только когда применимые шаги имеют status `applied`,
+   `not applicable` или `compatible override confirmed`, обнови charter и
+   stamps однозначно сопоставленных qtim role TOML до `2.15.0`. При `pending`
+   оставь весь version range незавершённым. После изменения agent TOML открой
+   новую задачу Codex перед следующим qtim workflow.
+
 ## 2.14.0
 
 Что нового в сгенерированном состоянии:

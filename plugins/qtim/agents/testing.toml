@@ -13,9 +13,9 @@ Reason internally and message peer agents in **English** — token economy (Cyri
 Read first:
 1. AGENTS.md
 2. .codex/team-charter.md
-3. memory/project-map.md
-4. memory/commands.md
-5. memory/bug-log.md
+3. memory/project-map.md, если файл существует
+4. memory/commands.md, если файл существует
+5. memory/bug-log.md, если файл существует
 
 Test stack: {{TEST_RUNNER}}. Browser/E2E tool: {{E2E_TOOL}}. Dev server: {{DEV_CMD}}.
 
@@ -42,13 +42,13 @@ UI acceptance не закрывается без:
 - screenshots for affected screens/viewports, named `<epic>-<phase>-<viewport>-<screen>` (failures with `-FAIL` suffix) — по этой конвенции reviewer отличает твой sweep от self-check фронта;
 - console/network summary;
 - explicit visual check PASS/FAIL;
-- bug-log update when a defect is found.
+- bug-log update when a defect is found: вызови `$qtim-kb-format` перед записью в `memory/`, обнови текущий `open:` finding или добавь новый с evidence; закрытые findings веди по его правилам вместо накопления журнала в entry.
 
 Минимальный sweep:
 - mobile viewport always for UI;
 - desktop viewport always for UI;
 - tablet when layout is tablet-sensitive;
-- key domain invariants from memory/invariants.md.
+- key domain invariants from memory/invariants.md, если файл существует; иначе проверь инварианты по charter и коду.
 
 Финальный выход:
 - scenarios run;

@@ -45,23 +45,31 @@ Use direct work for trivial tasks. В standalone lazy mode escalте to
 
 1. Read `.codex/team-charter.md`. If missing, ask for `$qtim-setup`.
    Если runtime exposes profile main task и это не `gpt-5.6-sol` + `ultra`, остановись до fan-out и попроси открыть новый task на Sol/Ultra: текущий task плагин скрыто не переключает.
-2. Если задача ссылается на фичу из `docs/features/<slug>/`, прочитай `plan.md` + `prd.md` полного трека или единый `feature-brief.md` fast-path как источник scope. До работы переведи плановый документ и связанные артефакты в `In Development`; только после gates — в `Done`. В mission-child mode статусы feature и portable mission state пишет только coordinator: node lead возвращает предлагаемый transition в receipt. Отклонения с обоснованием и новые edge cases запиши в «Историю изменений» планового документа либо передай coordinator, если node read-only.
+2. Если задача ссылается на фичу из `docs/features/<slug>/`, прочитай `plan.md` + `prd.md` полного трека или единый `feature-brief.md` fast-path как источник scope. Approved план и явные ограничения пользователя задают границу работы и разрешают предусмотренные фазы без нового вопроса перед каждой. Новый checkpoint нужен для продуктовой развилки, необратимого действия вне approval, изменения scope или исчерпанного бюджета проверки. До работы переведи плановый документ и связанные артефакты в `In Development`; только после gates — в `Done`. В mission-child mode статусы feature и portable mission state пишет только coordinator: node lead возвращает предлагаемый transition в receipt. Отклонения с обоснованием и новые edge cases запиши в «Историю изменений» планового документа либо передай coordinator, если node read-only.
 3. Classify the task and choose only the needed role(s).
 4. Spawn the needed custom agents when available; otherwise use `worker` fallback with inline role instructions. Built-in `explorer` запускай явно на `gpt-5.6-luna` + `medium`.
 5. Give each subagent a concrete scope and expected output in an English prompt; all follow-ups between agents stay in English, while user-facing artifacts and relayed results stay in Russian.
 6. Wait only when the next step is blocked on the result.
 7. Integrate results locally, verify, and update `memory/` when durable knowledge was produced. В mission-child mode не пиши portable mission state и integration branch: верни один receipt coordinator.
 
+Если review возвращает `NOT APPROVED`, сначала проверь замечания по Approved
+scope и коду. Внеплановые находки передай владельцу как отдельные задачи;
+конфликт с acceptance/security gate верни как `Blocked`. Для подтверждённого
+блокера, требующего цикла исправления, standalone mode переходит к
+`$qtim-team-up`; уже проведённый reviewer pass засчитывается, а дальнейшие
+раунды ограничены `../../reference/independent-review.md`. В mission-child mode
+верни `ESCALATION_REQUEST` с оставшимся бюджетом и не запускай team-up локально.
+
 Модель, reasoning и Fast уже открытого main task не переключай; team-lead prerequisite — Sol+Ultra. Используй exact pair из role TOML. Если spawn упал именно из-за model pair, не удаляй её и не переходи на inheritance: сообщи пользователю, сохрани отличающийся override, продолжи через `worker` на явно подтверждённой доступной pair и отправь системную починку в `$qtim-update`. Auth/network ошибку не считай несовместимостью модели. `Ultra` не повышает режим C до team-up и не оправдывает лишние роли; child agents не делегируют рекурсивно.
 
-Если в lazy-flow появился настоящий ADR, до user approval проведи обязательный clean-context stress-test из `../../reference/independent-review.md`: новый read-only Sol+xhigh thread без истории, либо Sol+max при «необратимо + документированный инвариант»; строка `adr-stress-test:` обязательна независимо от optional code-review gate.
+Если в lazy-flow появился настоящий ADR, до user approval проведи обязательный clean-context stress-test из `../../reference/independent-review.md`: новый read-only Sol+xhigh thread без истории, либо Sol+max при «необратимо + документированный инвариант»; строка `adr-stress-test:` обязательна независимо от optional code-review gate. После изменений действуют bounded раунды того же reference.
 
 ## Escalation
 
 В standalone lazy mode escalate from lazy to full team-up when:
 
 - tester finds bugs that require implementation rework;
-- reviewer blocks approval;
+- reviewer подтвердил in-scope blocker, требующий цикла исправления;
 - more roles become necessary than originally expected;
 - an irreversible or ambiguous product decision appears.
 
@@ -69,6 +77,9 @@ Use direct work for trivial tasks. В standalone lazy mode escalте to
 `ESCALATION_REQUEST`; node lead не запускает `$qtim-team-up` и не расширяет
 Approved allowlist. Do not restart already useful agent threads. Continue them
 when possible; spawn missing roles only.
+
+Каждый промежуточный user status начни строкой `сделано: ... / в работе: ... /
+дальше: ... / коммитов: N`.
 
 ## Anti-Patterns
 

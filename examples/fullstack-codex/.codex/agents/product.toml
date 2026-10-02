@@ -1,4 +1,4 @@
-# qtim-version: 2.14.0
+# qtim-version: 2.15.0
 name = "qtim-product"
 description = "Product analysis and vertical slicing."
 model = "gpt-5.6-sol"

@@ -70,8 +70,9 @@ codex plugin add qtim@qtim-agent-team              # переустановит�
    нетронутым. Дождись подтверждения.
 6. Применяй секции oldest -> newest. Durable содержимое `memory/` и
    `docs/features/` не переписывается; исключение — только точные qtim-managed
-   index lines в `memory/MEMORY.md` и точная `.codex/qtim-runtime/` строка
-   корневого `.gitignore`, явно названные version-section. Сохраняй остальные
+   index lines в `memory/MEMORY.md` и точные строки `.codex/qtim-runtime/` и
+   `docs/features/**/.work/` корневого `.gitignore`, явно названные version-section.
+   Сохраняй остальные
    строки byte-for-byte. Для каждой версии собери checklist applicable шагов со
    статусами `applied` / `compatible override confirmed` / `pending`.
    Независимые regions уже в target-state не дублируй; частично совпавшая target
@@ -99,6 +100,8 @@ codex plugin add qtim@qtim-agent-team              # переустановит�
 - для stamp 2.14.0+ каждый сопоставленный qtim agent TOML, общий `## Language` charter и managed block `AGENTS.md` содержат полный обязательный contract: internal reasoning и peer messages — English, user-facing output — Russian; конфликтующее пользовательское language rule не считается compatible молча, foreign agents не нормализуются;
 - для stamp 2.12.0+ `.codex/qtim-runtime/` находится в корневом `.gitignore` ровно
   один раз и runtime registry не tracked;
+- для PM track со stamp 2.15.0+ корневой `.gitignore` содержит ровно одну строку
+  `docs/features/**/.work/`; существующие tracked файлы не удалены миграцией;
 - в изменённых файлах нет plugin-internal путей (`../../...`);
 - финальный ответ: версии до/после, изменённые файлы, compatible overrides и pending; при pending явно скажи, что stamps остались на последней полностью завершённой версии и целевая migration не завершена. Если менялся любой `.codex/agents/*.toml`, новая задача Codex **обязательна** перед qtim workflow. Если менялись hooks, открой `/hooks`, заново review/trust изменённые definitions; если текущий runtime не подхватил их после review, открой новую задачу. Если agent TOML и hooks не менялись, дополнительный restart не нужен.
 
@@ -107,8 +110,8 @@ codex plugin add qtim@qtim-agent-team              # переустановит�
 - Не выполняй `codex plugin ...` без явной просьбы пользователя.
 - Не трогай durable содержимое `memory/`, `docs/features/` и правки пользователя
   вне qtim-маркеров. В `memory/MEMORY.md` меняй только exact qtim-managed index
-  lines, а в `.gitignore` — только exact runtime line, прямо предписанные upgrade
-  notes; остальные строки сохраняй.
+  lines, а в `.gitignore` — только exact строки runtime и feature `.work/`, прямо
+  предписанные upgrade notes; остальные строки сохраняй.
 - Не удаляй и не переупорядочивай неизвестные пользовательские hook entries; распознанный qtim handler удаляй отдельно от соседних handlers и только после показанного diff.
 - Не выдумывай шаги миграции: только `upgrade-notes.md` и фактический diff с templates.
 - Считай `model` + `model_reasoning_effort` одной профильной парой: current qtim defaults явные; недоступная pair оставляет migration pending, пользовательские overrides требуют diff-подтверждения.

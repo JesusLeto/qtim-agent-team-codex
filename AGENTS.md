@@ -8,7 +8,7 @@ All content is primarily Russian. The repository has no build step and no applic
 
 - `.agents/plugins/marketplace.json` — Codex marketplace manifest exposing `plugins/qtim`.
 - `plugins/qtim/.codex-plugin/plugin.json` — Codex plugin manifest.
-- `plugins/qtim/skills/` — Codex workflows: `qtim-setup`, `qtim-feature`, `qtim-mission`, `qtim-onboard`, `qtim-product-onboard`, `qtim-team-up`, `qtim-team-lazy`, `qtim-team-retro`, `qtim-team-down`, `qtim-doctor`, `qtim-update`; bundled disciplines: `qtim-debug-loop`, `qtim-prototype`, `qtim-brainstorm`, `qtim-grill`, `qtim-minimal-diff`.
+- `plugins/qtim/skills/` — Codex workflows: `qtim-setup`, `qtim-feature`, `qtim-mission`, `qtim-onboard`, `qtim-product-onboard`, `qtim-kb-refresh`, `qtim-team-up`, `qtim-team-lazy`, `qtim-team-retro`, `qtim-team-down`, `qtim-doctor`, `qtim-update`; bundled disciplines: `qtim-debug-loop`, `qtim-prototype`, `qtim-brainstorm`, `qtim-grill`, `qtim-minimal-diff`, `qtim-kb-format`.
 - `plugins/qtim/agents/` — Codex custom agent TOML templates (dev roles + `product.toml` for the PM track) copied by `$qtim-setup` into target projects.
 - `plugins/qtim/reference/` — shared mechanics plus canonical `project-hooks.json` for optional project PostToolUse and upgrade notes for generated-state migrations.
 - `plugins/qtim/hooks/hooks.json` — plugin-bundled Codex `SessionStart` / `SubagentStop` lifecycle hooks.
@@ -26,6 +26,7 @@ All content is primarily Russian. The repository has no build step and no applic
 - The main thread owns fan-out. Child agents do not recursively spawn qtim teams; respect the runtime thread cap and batch independent work when needed.
 - Main thread is the team lead; subagent outputs are advisory until checked.
 - Durable project decisions belong in `memory/`, not only in chat.
+- Before writing `memory/` or feature process artifacts, load `$qtim-kb-format`; use `$qtim-kb-refresh` for drift in existing knowledge.
 - Independent review is a separate read-only Codex agent thread, not "Codex as an external consultant". Every created ADR gets a clean-context Sol adversary before approval, regardless of the optional risk-based code-review setting.
 - Role templates use explicit atomic GPT-5.6 `model` + `model_reasoning_effort` pairs; never write `model = "inherit"`. Preserve user overrides during migration.
 - Bundled disciplines are role-agnostic practices, not orchestration engines: do not put main-thread fan-out, persistent-team assumptions, or qtim workflow ownership inside `qtim-debug-loop`, `qtim-prototype`, `qtim-brainstorm`, `qtim-grill`, or `qtim-minimal-diff`.
@@ -34,10 +35,10 @@ All content is primarily Russian. The repository has no build step and no applic
 
 ## Workspace And Deploy
 
-- This folder (`outputs/qtim-agent-team-codex`) is the single source of truth and the deploy point. Deploy = conventional commit + `git push origin main` (`origin` = `trushhh777/qtim-agent-team`). No intermediate copies, zips, or deploy folders.
+- This fork (`JesusLeto/qtim-agent-team-codex`) is the source of truth for its changes. Publish a reviewable branch to this fork; `trushhh777/qtim-agent-team` is the upstream repository. Verify the actual Git remote before pushing.
 - After deploy, plugin users update via `codex plugin marketplace upgrade qtim-agent-team` + `codex plugin add qtim@qtim-agent-team` + new thread; project teams migrate with `$qtim-update`.
 - `.claude/` is local session state, gitignored — never commit it.
-- The Claude Code sibling project lives at `../qtim-agent-team-claude` (separate git: `upstream` = toiiia/qtim-agent-team for pulling, `origin` = the trushhh777 fork for PR branches). Features are born and proven here, then ported there semantically per `docs/claude-port-map.md` — never by copying text. Its local working rules live in its own `CLAUDE.local.md`.
+- The Claude Code sibling is `JesusLeto/qtim-agent-team` (upstream `toiiia/qtim-agent-team`). Port shared behavior semantically using `docs/claude-port-map.md`; keep Codex and Claude runtime files separate.
 
 ## Validation
 
@@ -60,6 +61,7 @@ python3 .github/scripts/check_migrations.py
 python3 .github/scripts/check_update_fixtures.py
 python3 .github/scripts/check_update_fixtures.py --self-test
 python3 .github/scripts/check_golden.py
+python3 plugins/qtim/skills/qtim-kb-refresh/scripts/kb_scan.py scan --base HEAD > /dev/null
 ```
 
 In CI, use repo-local scripts only. Before release, also run Codex `plugin-creator`'s `validate_plugin.py plugins/qtim` from the local Codex skill installation if it is available.

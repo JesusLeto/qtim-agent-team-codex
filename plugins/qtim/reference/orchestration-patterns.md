@@ -26,6 +26,26 @@ Mission поддерживает read-only и isolated writer nodes, transaction
 topological ff-only promotion и bounded final verification; подробный контракт —
 в `mission-protocol.md`.
 
+## Approved Scope And Phase Autopilot
+
+Утверждённый ticket/plan и явные ограничения пользователя задают границу
+работы. Проверяй находки reviewer по этой границе: дефект, который мешает
+acceptance criteria или обязательному security gate, исправляй в scope;
+постороннюю находку фиксируй как отдельную задачу для владельца. Когда без
+расширения scope обязательный gate пройти нельзя, верни `Blocked` с точным
+конфликтом и запрошенным решением вместо самовольного расширения.
+
+Approval плана разрешает выполнять его фазы подряд, включая предусмотренные
+тесты и review gates. Новый user checkpoint нужен при продуктовой развилке,
+необратимом действии вне данного approval, исчерпанном бюджете доработок или
+изменении утверждённого scope. Начало очередной фазы само по себе не checkpoint.
+Для каждого отчёта о ходе работы дай короткую строку: `сделано: ... / в работе:
+... / дальше: ... / коммитов: N` (если коммитов нет — `0`).
+
+На каждую фазу сохраняй первый проход `qtim-reviewer`; цикл исправлений и
+повторных проверок ограничен правилами `independent-review.md`. Обязательные
+security checks, acceptance gates и ADR adversary остаются в силе.
+
 ## Model, Reasoning And Concurrency
 
 - Перед fan-out проверь, что main task работает на обязательном для qtim профиле `gpt-5.6-sol` + `ultra`, когда runtime exposes metadata; иначе останови workflow и попроси пользователя открыть task с этим профилем. Role defaults и fallback описаны в `model-profiles.md`.
@@ -94,7 +114,9 @@ Rules:
 
 Для фактического diff действует каноническая high-risk matrix из `independent-review.md`: security/auth/tenant-scope visibility; money/billing/account state; documented domain invariants/public contracts; data-transform/destructive migrations; critical browser flows; high-risk performance/reliability; другое доказанно hard-to-rollback изменение. При любом совпадении запрос review обязателен. Для low-risk diff отдельный thread опционален; пропуск фиксируется в review report.
 
-Use `independent-review.md`. Spawn one or more read-only reviewer threads with a narrow prompt. They do not edit code. Main thread verifies every finding.
+Use `independent-review.md`. Spawn only the read-only reviewer threads needed
+for the actual risk, with a narrow prompt. They do not edit code. Main thread
+verifies every finding and applies its bounded remediation policy.
 
 ### 6. Generate And Filter
 
@@ -115,7 +137,10 @@ Rules:
 
 Когда: перед мержем крупного или рискованного эпика; для money/security-critical — обязателен до APPROVED.
 
-1. **Линзы (параллельно, read-only).** По одному reviewer-агенту на линзу; каждый получает scope (по умолчанию — незакоммиченные изменения: `git status` + `git diff`) и ровно одну линзу. Дефолтный набор:
+1. **Линзы (параллельно, read-only).** Выбери линзы по фактическому риску diff;
+   список ниже — меню, а не обязательный fan-out. Каждый reviewer получает scope
+   (по умолчанию — незакоммиченные изменения: `git status` + `git diff`) и одну
+   линзу:
    - модель доступа и видимость данных: обход политик/гардов, утечка чужих данных, наследование scope дочерними сущностями;
    - гонки и идемпотентность: конкурентные write-пути (все ветки, не только основная), повторный прогон миграций;
    - производительность: N+1, отсутствующие индексы на FK и колонках фильтра, лишние запросы;
@@ -123,7 +148,14 @@ Rules:
    - UX-поверхность: loading/empty/error, тексты на языке UI, тестовые селекторы на интерактиве.
 
    Каждая линза сверяется с charter + `memory/` и возвращает findings строго `file:line + severity P0-P3` — не стилистику и не пожелания.
-2. **Скептик-верификация.** На каждый finding — отдельный агент с заданием «попробуй ОПРОВЕРГНУТЬ по фактическому коду»; опровергнут по коду -> отброшен. **Гейт fail-closed:** сбой скептика не превращается молча в «дефекта нет» — finding без вердикта остаётся НЕопровергнутым; упавшая линза целиком означает непроверенное измерение. При потоке findings ограничивай: топ-10-12 на линзу по severity; остальные не выбрасывай — помечай неверифицированными.
+2. **Скептик-верификация.** Main thread проверяет очевидные findings по коду;
+   спорные группирует по общей причине и даёт одному read-only скептику на
+   группу/линзу, а не отдельному агенту на каждую строку. Для money/security
+   critical сохраняй требуемую независимую вторую трассу. Опровергнут по коду
+   -> отброшен. **Гейт fail-closed:** сбой скептика не превращается молча в
+   «дефекта нет» — finding без вердикта остаётся НЕопровергнутым; упавшая линза
+   означает непроверенное измерение. При потоке findings ограничивай: топ-10-12
+   на линзу по severity; остальные помечай неверифицированными.
 3. **Синтез (main thread).** Дедуп (одна проблема из разных линз = одна запись), группировка по severity, маршрутизация по ролям-владельцам; неверифицированные findings — отдельным блоком «требуют ручной проверки», упавшие линзы — явно в отчёте (он неполон). Правило вердикта применяй детерминированно сам — агент-синтезатор может его только ужесточить: NOT APPROVED при любом P0/P1, подтверждённом **или неверифицированном**, и при упавшей линзе. Отчёт — в `memory/review-report.md`.
 
 ### Recipe: Access Audit (паттерн 4, барьер перед синтезом)

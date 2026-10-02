@@ -1,6 +1,6 @@
 ---
 name: qtim-feature
-description: "Use when a PM or analyst wants to turn a raw feature idea into implementation-ready, versioned artifacts under docs/features: select a risk-proportional fast-path feature brief or the full intake-to-PRD-to-plan pipeline with grounded decomposition and estimate, then recommend direct execution, $qtim-team-lazy, $qtim-team-up, or $qtim-mission from the execution topology."
+description: "Use when a PM or analyst wants to turn a raw feature idea into versioned artifacts under docs/features: select a risk-proportional fast-path brief or the full intake-to-PRD-to-plan pipeline, optionally finish at an approved PRD, and recommend an execution route only when an implementation plan exists."
 ---
 
 # qtim Feature Pipeline
@@ -21,7 +21,8 @@ grounded-оценки и vertical slicing живёт в `../../reference/feature
 2. Прочитай `../../reference/feature-pipeline.md` и `../../reference/intake-protocol.md`.
 3. Прочитай `../../reference/model-profiles.md`. qtim team-lead должен работать на `gpt-5.6-sol` + `ultra`; не переключай уже открытый task скрыто. Если runtime exposes другой профиль, остановись до fan-out и попроси открыть новый task на Sol/Ultra. `Ultra` не расширяет scope и не отменяет checkpoints.
 4. Определи kebab-case slug.
-5. Если `docs/features/<slug>/` существует, прочитай статусы и «Историю изменений». `feature-brief.md` означает fast-path, `prd.md`/полный набор — полный трек. Продолжи с первого незавершённого обязательного артефакта, не начинай заново. У Stage 6 своего артефакта нет: её completion marker — строка-указатель на slug в `memory/decisions.md`. Плановый документ уже `Approved`, а указателя нет -> resume со Stage 6, не считай pipeline завершённым.
+5. Если `docs/features/<slug>/` существует, прочитай статусы и «Историю изменений». `feature-brief.md` означает fast-path, `prd.md`/полный набор — полный трек. `Archived` завершён; `Done` сначала проверь по gates. Approved PRD-only с указателем — завершённое планирование до новой просьбы продолжить. Иначе продолжи с первого незавершённого обязательного артефакта, не начинай заново. У Stage 6 своего артефакта нет: её completion marker — строка-указатель на slug в `memory/decisions.md`. Approved план, brief или PRD-only без указателя -> resume со Stage 6.
+6. Перед первой записью в `docs/features/` или `memory/` прочитай `$qtim-kb-format`; передай его правила каждому пишущему агенту. Уже существующие артефакты меняй на месте и сжимай их историю, не дописывай копии.
 
 Если custom agent не стартует именно из-за model pair, не удаляй пару и не заменяй её inheritance молча. Отличающийся override сохрани; продолжи через `worker` с inline role instructions только на явно подтверждённой доступной pair. Built-in `explorer` используй на `gpt-5.6-luna` + `medium`; не угадывай slug и не считай auth/network ошибку несовместимостью модели.
 
@@ -29,7 +30,7 @@ grounded-оценки и vertical slicing живёт в `../../reference/feature
 
 ## Artifacts
 
-Общий файл — `intake.md`. Полный трек добавляет `prd.md`, `decomposition.md`, `estimate.md`, `plan.md`; fast-path — один `feature-brief.md` вместо этих четырёх. Шапка, статусы Draft -> Approved -> In Development -> Done и append-only «История изменений» — по feature-pipeline reference. `memory/decisions.md` хранит только указатель на утверждённую фичу.
+Общий файл — `intake.md`. Полный трек добавляет `prd.md`, `decomposition.md`, `plan.md` и условный `estimate.md`; fast-path — один `feature-brief.md` вместо них. PRD-only завершает планирование после утверждённого `prd.md`. Шапка, статусы Draft -> Approved -> In Development -> Done -> Archived и «История изменений» с потолком в пять коротких записей — по feature-pipeline reference. `memory/decisions.md` хранит только указатель на утверждённую фичу.
 
 ## Stage 1: Intake And Track
 
@@ -68,7 +69,7 @@ Brief включает:
 
 Spawn `qtim-product` (fallback: `worker` с PM-инструкциями из charter) с read-first на charter PM track и `intake.md`.
 
-`prd.md` содержит цели, non-goals, сценарии и acceptance criteria, UX-заметки, метрики, риски, open questions. Метрики связывай с реальными событиями из `memory/product-metrics.md`; отсутствующее событие — задача на tracking, не факт. **Checkpoint:** пользователь утверждает PRD; Status -> Approved.
+`prd.md` содержит цели, non-goals, сценарии и acceptance criteria, UX-заметки, метрики, риски, open questions. Метрики связывай с реальными событиями из `memory/product-metrics.md`; отсутствующее событие — задача на tracking, не факт. **Checkpoint:** пользователь утверждает PRD и выбирает «продолжить к плану» либо «завершить на PRD». Если выбрано второе, добавь `## Handoff` с `Результат: PRD-only` и открытыми решениями, Status -> Approved, затем выполни только PRD-only ветку Stage 6. Возобновляй стадии 3-5 лишь по новой просьбе пользователя.
 
 ## Full Track Stage 3: Grounded Decomposition
 
@@ -77,13 +78,22 @@ Spawn `qtim-product` (fallback: `worker` с PM-инструкциями из cha
 1. Spawn read-only `qtim-architect` для слоёв/data flow/инвариантов и только нужные `qtim-database`, `qtim-frontend`, `qtim-testing`; узкая фича обычно требует architect + одного владельца слоя. `explorer` — broad search. Уважай runtime cap и запускай batches; child agents не делегируют дальше.
 2. `qtim-product` агрегирует `decomposition.md`: `id | вертикальный work item | DRI | contributing роли/слои | зависимости | grounding (файлы)`. DRI владеет главной acceptance boundary; неоднозначный ownership разрешает architect.
 
-Каждый work item — проверяемый вертикальный срез через затронутые слои. Для широкого механического rename/retype используй expand-contract. Отдельного checkpoint здесь нет.
+Каждый work item — проверяемый вертикальный срез через затронутые слои. Очевидный XL item разрежь даже при пропуске оценки. Для широкого механического rename/retype используй expand-contract. Checkpoint для decomposition общий со Stage 4, если оценка нужна; иначе пользователь утверждает work items без отдельного раунда оценки.
 
-## Full Track Stage 4: Grounded Estimation
+## Full Track Stage 4: Grounded Estimation, When Needed
+
+По умолчанию пропусти Stage 4 и `estimate.md`. Выполни её, если оценка нужна
+для выбора исполнителя, срока/бюджета или явно запрошена. Передача тому же
+владельцу в новую задачу Codex сама по себе не требует оценки. Decomposition
+и разрезание XL остаются обязательными в обоих случаях.
 
 Каждая contributing роль даёт S/M/L/XL + confidence + риски для своего layer slice с evidence (файлы, покрытие, интеграционные точки, reference class из git или `memory/decisions.md`). DRI возвращает один итоговый размер vertical item с явным синтезом integration/coordination risk; не складывай размеры механически. Без evidence оценка не принимается; XL любого slice или item означает вернуться к decomposition и разрезать item.
 
-`qtim-product` сводит `estimate.md`. **Общий checkpoint стадий 3-4:** пользователь одним решением утверждает work items и оценки; оба артефакта -> Approved. Если состав изменён, пересчитай оценки затронутых items до повторного checkpoint.
+Если Stage 4 нужен, `qtim-product` сводит `estimate.md`. **Checkpoint:**
+пользователь утверждает work items; при выполненной оценке одним решением
+утверждает и её, оба созданных артефакта -> Approved. Если Stage 4 пропущен,
+Approved получает только `decomposition.md`. При изменении состава пересчитай
+оценки затронутых items, только если `estimate.md` существует.
 
 ## Full Track Stage 5: Plan
 
@@ -97,17 +107,29 @@ Spawn `qtim-product` (fallback: `worker` с PM-инструкциями из cha
 
 Сначала ставь решения с высокой неопределённостью (данные, API-контракты, UX-развилки), механическую доводку — позже. Широкий рефактор планируй expand-contract.
 
-Если architect создал ADR, **до** финального checkpoint main thread запускает новый read-only thread без истории на `gpt-5.6-sol` + `xhigh`; при сочетании «необратимо + затронут документированный инвариант» — `max`. Findings возвращаются architect для проверки, а ADR получает строку `adr-stress-test:`. Optional code-review gate этот шаг не отключает.
+Если architect создал ADR, **до** финального checkpoint main thread запускает новый read-only thread без истории на `gpt-5.6-sol` + `xhigh`; при сочетании «необратимо + затронут документированный инвариант» — `max`. Findings возвращаются architect для проверки, а ADR получает строку `adr-stress-test:`. Исправления и повторные проходы ограничены `../../reference/independent-review.md`; optional code-review gate этот шаг не отключает.
 
 **Checkpoint:** финальное approval; Status -> Approved.
 
 ## Stage 6: Handoff
+
+Для `PRD-only` сохрани `## Handoff` и сообщи пользователю, что продуктовый
+контракт готов. Затем последним файловым изменением добавь или обнови одну
+строку-указатель на `prd.md` в `memory/decisions.md`. Команду реализации и блок
+`Что запускать дальше` пока не создавай: сначала нужна новая просьба
+продолжить планирование.
+
+Для утверждённого плана или brief выполни шаги ниже:
+Его approval закрывает design gate для реализации и всех предусмотренных фаз.
+После отдельного разрешения запуска исполнение не требует вопроса перед каждой
+фазой, кроме новой существенной развилки или выбранного phase-by-phase режима.
 
 1. Для полного трека сначала заверши `plan.md` базовым implementation contract:
 
 ```text
 PRD и acceptance criteria: docs/features/<slug>/prd.md.
 Обнови Status артефактов: In Development при старте, Done после gates.
+После проверки Done и свидетельства слияния предложи архивацию владельцу по feature-pipeline reference.
 Отклонения и новые edge cases фиксируй в «Истории изменений» plan.md.
 ```
 
@@ -116,6 +138,7 @@ PRD и acceptance criteria: docs/features/<slug>/prd.md.
 ```text
 Scope, acceptance criteria и gates находятся в этом документе.
 При старте переведи Status в In Development, после всех gates — в Done.
+После проверки Done и свидетельства слияния предложи архивацию владельцу по feature-pipeline reference.
 Отклонения и новые edge cases фиксируй там же.
 ```
 
@@ -176,4 +199,6 @@ Scope, acceptance criteria и gates находятся в этом докуме�
 - Автоматический запуск рекомендованного `$qtim-team-up`/`$qtim-mission` без нового
   явного разрешения пользователя.
 - Выдуманные часы вместо относительной оценки с evidence.
+- Обязательная стадия estimate без решения, которому нужна оценка.
+- Продолжение к плану после выбранного результата `PRD-only` без новой просьбы.
 - Пропуск checkpoint «потому что очевидно».

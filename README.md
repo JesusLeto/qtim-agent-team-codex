@@ -2,19 +2,20 @@
 
 Плагин для Codex, который разворачивает в проекте **команду специализированных subagents**: архитектор, database/backend, frontend, tester, reviewer и дополнительные роли под зрелые продукты. Вместо одного ассистента-универсала ты получаешь воспроизводимый workflow: проектирование, реализация, real-browser QA, ревью и фиксация решений в `memory/`.
 
-qtim двух-ролевой: **разработчик** получает dev-команду с циклами implement -> test -> review, **PM/аналитик** — риск-пропорциональный `$qtim-feature`: короткий feature brief для простой хотелки или полный PRD -> grounded decomposition/estimate -> plan. Роли уживаются в одном проекте.
+qtim двух-ролевой: **разработчик** получает dev-команду с ограниченными циклами implement -> test -> review, **PM/аналитик** — риск-пропорциональный `$qtim-feature`: короткий feature brief для простой хотелки или полный PRD -> grounded decomposition -> plan с оценкой по запросу. Роли уживаются в одном проекте.
 
 qtim подстраивается под стек проекта: анализирует репозиторий, задаёт несколько вопросов (первый — твоя роль) и генерирует Codex custom agents под реальные фреймворки, команды и инварианты.
 
 ## Что это даёт
 
 - **Разделение труда** — роли отвечают за свои слои: архитектура, данные, UI, тесты, ревью.
-- **PM-трек без фиксированного налога** — `$qtim-feature` выбирает fast-path `feature-brief.md` для S/M одной фазы без развилок или полный трек; decomposition и estimate утверждаются одним решением, consult зовёт только владельцев затронутых слоёв.
+- **PM-трек без фиксированного налога** — `$qtim-feature` выбирает fast-path `feature-brief.md` для S/M одной фазы без развилок или полный трек; estimate строится по запросу, consult зовёт только владельцев затронутых слоёв, после PRD можно завершить планирование.
 - **Встроенные дисциплины** — `$qtim-debug-loop` для сложных багов, `$qtim-prototype` для дизайн-развилки, `$qtim-brainstorm` до ADR, `$qtim-grill` для stress-test плана и `$qtim-minimal-diff` для минимального полноценного объёма решения поставляются самим плагином и доступны любой роли.
 - **Продуктовая память** — `$qtim-product-onboard` собирает из кодовой базы карту разделов, модель акторов, словарь домена и реестр событий аналитики (плюс материалы ПМа из `docs/product-context/`, если есть) — intake и PRD опираются на факты, а не на пересказ.
+- **Актуализация базы знаний** — `$qtim-kb-refresh` проверяет устаревшие ссылки памяти по выбранной Git-базе, инвентаризует артефакты фич, ограничивает объём работы и сверяет потери после записи; `$qtim-kb-format` задаёт компактный формат новых фактов.
 - **Codex-native упаковка** — плагин состоит из `.codex-plugin/plugin.json`, `skills/`, custom-agent templates и plugin-bundled Codex hooks; project `PostToolUse` остаётся опциональным.
 - **Подстройка под стек** — setup создаёт `.codex/team-charter.md` и `.codex/agents/*.toml` под проект.
-- **Контроль качества** — встроены gates: typecheck/build/tests, real-browser evidence, risk-based review кода и обязательный clean-context Sol stress-test каждого ADR до approval.
+- **Контроль качества** — встроены gates: typecheck/build/tests, real-browser evidence, risk-based review кода и обязательный clean-context Sol stress-test каждого ADR до approval. Повторные проверки ограничены и расширяются при изменении поверхности риска.
 - **Гибкие режимы** — `$qtim-team-lazy` для точечных задач и `$qtim-team-up` для эпиков с циклами implement -> test -> review.
 - **Cross-dialog mission** — явный `$qtim-mission` координирует несколько видимых
   задач Codex App как проверяемый DAG: read-only analysis, bounded node-local lazy
@@ -66,7 +67,7 @@ overwrite и auto-archive запрещены.
 Из GitHub marketplace-репозитория:
 
 ```bash
-codex plugin marketplace add trushhh777/qtim-agent-team
+codex plugin marketplace add JesusLeto/qtim-agent-team-codex
 codex plugin add qtim@qtim-agent-team
 ```
 
@@ -116,7 +117,8 @@ codex plugin add qtim@qtim-agent-team              # переустановит�
    ```text
    $qtim-onboard          # dev: один раз наполнить память картой, инвариантами и конвенциями
    $qtim-product-onboard  # PM: один раз собрать продуктовую память из кода
-   $qtim-feature          # PM: fast brief или полный PRD -> decomposition/estimate -> plan
+   $qtim-kb-refresh       # актуализировать память и артефакты фич по проверенному diff
+   $qtim-feature          # PM: fast brief или полный PRD -> decomposition -> plan
    $qtim-mission          # App: видимый DAG, writer worktrees, integration + verification
    $qtim-team-up          # полный эпик с циклами implement -> test -> review
    $qtim-team-lazy        # роли по мере надобности
@@ -136,8 +138,10 @@ codex plugin add qtim@qtim-agent-team              # переустановит�
 | `$qtim-mission` | Явно запустить Approved DAG видимых Codex App задач: read-only/lazy/writer nodes, topological integration, bounded verification/fixes и `status/resume/stop` без auto-archive |
 | `$qtim-team-up` | Крупная задача/эпик с обратной связью между implement/test/review |
 | `$qtim-team-lazy` | Быстрая или средняя задача без полного прогрева команды |
-| `$qtim-onboard` | После setup на существующей кодовой базе: наполнить dev-память картой, инвариантами и конвенциями с `file:line` |
+| `$qtim-onboard` | После setup на существующей кодовой базе: наполнить dev-память картой, инвариантами и конвенциями с устойчивыми `path#Symbol` |
 | `$qtim-product-onboard` | После setup с PM-дорожкой: собрать продуктовую память из кода — разделы, акторы, словарь домена, события аналитики |
+| `$qtim-kb-refresh` | Проверить дрейф `memory/` от выбранной Git-базы, инвентаризовать `docs/features/`, ограниченно обновить устаревшее и проверить отсутствие потерь |
+| `$qtim-kb-format` | При записи базы знаний: сжатые факты, устойчивые ссылки на код и проверяемый `checked` |
 | `$qtim-team-retro` | После завершённого эпика (до team-down): дистиллировать уроки и классифицировать epic-scoped `minimal-diff:` markers; durable follow-up создаётся только для доказанно сработавшего trigger |
 | `$qtim-team-down` | Завершить активные agent threads и сохранить durable state; незавершённый эпик фиксируется в `memory/epic-state.md` |
 | `$qtim-doctor` | «Что-то не работает» или после обновления: read-only диагностика charter/агентов, hooks, памяти и advisory roster drift (`repository signal -> responsibility gap -> safe action`) |
@@ -158,7 +162,7 @@ codex plugin add qtim@qtim-agent-team              # переустановит�
   validated/integrated receipts, локальные решения и final verification;
   opaque runtime handles остаются в gitignored `.codex/qtim-runtime/`.
 - `AGENTS.md` — указатель для Codex на qtim-команду и локальные правила проекта.
-- `docs/features/<slug>/` — появляется при `$qtim-feature`: `intake.md` + единый fast-path `feature-brief.md` или полный набор PRD/decomposition/estimate/plan.
+- `docs/features/<slug>/` — появляется при `$qtim-feature`: `intake.md` + единый fast-path `feature-brief.md` или полный трек PRD/decomposition/plan с условным `estimate.md`; PRD-only может быть конечным результатом.
 
 ## Как это выглядит
 
@@ -174,7 +178,8 @@ PM/аналитик:
 ```text
 Ты:   $qtim-feature, хотим избранное для товаров
 qtim: intake + выбор трека -> для простой версии один feature-brief и один checkpoint;
-      при развилках — PRD -> selective dev-consult -> decomposition+estimate -> plan
+      при развилках — PRD -> selective dev-consult -> decomposition -> plan
+      (оценка по необходимости; после PRD можно завершить как PRD-only)
 Ты:   получаешь docs/features/favorites/ и topology-based команду direct,
       $qtim-team-lazy, $qtim-team-up или $qtim-mission
 ```
