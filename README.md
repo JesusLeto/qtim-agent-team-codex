@@ -15,7 +15,7 @@ qtim подстраивается под стек проекта: анализи
 - **Актуализация базы знаний** — `$qtim-kb-refresh` проверяет устаревшие ссылки памяти по выбранной Git-базе, инвентаризует артефакты фич, ограничивает объём работы и сверяет потери после записи; `$qtim-kb-format` задаёт компактный формат новых фактов.
 - **Codex-native упаковка** — плагин состоит из `.codex-plugin/plugin.json`, `skills/`, custom-agent templates и plugin-bundled Codex hooks; project `PostToolUse` остаётся опциональным.
 - **Подстройка под стек** — setup создаёт `.codex/team-charter.md` и `.codex/agents/*.toml` под проект.
-- **Контроль качества** — встроены gates: typecheck/build/tests, real-browser evidence, risk-based review кода и обязательный clean-context Sol stress-test каждого ADR до approval. Повторные проверки ограничены и расширяются при изменении поверхности риска.
+- **Контроль качества** — встроены gates: typecheck/build/tests, real-browser evidence, risk-based review кода и обязательный clean-context Astra stress-test каждого ADR до approval. Повторные проверки ограничены и расширяются при изменении поверхности риска.
 - **Гибкие режимы** — `$qtim-team-lazy` для точечных задач и `$qtim-team-up` для эпиков с циклами implement -> test -> review.
 - **Cross-dialog mission** — явный `$qtim-mission` координирует несколько видимых
   задач Codex App как проверяемый DAG: read-only analysis, bounded node-local lazy
@@ -33,7 +33,7 @@ accessibility и документированные инварианты не с
 
 Нужен Codex с поддержкой plugins, skills и subagents. Отдельный флаг Claude Agent Teams не нужен.
 
-qtim запускает subagent workflow только по явной просьбе или вызову соответствующего skill. Основную задачу для qtim открой на `gpt-5.6-sol` + `Ultra`: main thread остаётся team-lead и получает proactive delegation внутри уже разрешённого scope. Плагин не переключает уже открытую задачу скрыто, не расширяет scope и не поднимает рекурсивные команды из child agents.
+qtim запускает subagent workflow только по явной просьбе или вызову соответствующего skill. Основную задачу для qtim открой на `gpt-6-astra` + `Ultra`: main thread остаётся team-lead и получает proactive delegation внутри уже разрешённого scope. Плагин не переключает уже открытую задачу скрыто, не расширяет scope и не поднимает рекурсивные команды из child agents.
 
 Full `$qtim-mission` требует callable peer-task tools Codex App. На CLI/IDE без
 этой surface skill честно предлагает `$qtim-team-up` как single-task fallback.
@@ -47,20 +47,20 @@ overwrite и auto-archive запрещены.
 
 ## Модели и reasoning
 
-В qtim 2.13.0 оркестратор и роли разведены по явным GPT-5.6 профилям:
+В qtim 2.15.1 оркестратор и роли разведены по явным GPT-6 профилям:
 
 | Роль | Model / reasoning |
 |---|---|
-| main team-lead | `gpt-5.6-sol` + `ultra` |
-| architect, reviewer | `gpt-5.6-sol` + `xhigh` |
-| database, frontend, product | `gpt-5.6-sol` + `high` |
-| testing | `gpt-5.6-terra` + `medium` |
-| built-in explorer | `gpt-5.6-luna` + `medium` |
-| clean-context ADR adversary | `gpt-5.6-sol` + `xhigh`; `max` для необратимого решения, задевающего инвариант |
+| main team-lead | `gpt-6-astra` + `ultra` |
+| architect, reviewer | `gpt-6-astra` + `xhigh` |
+| database, frontend, product | `gpt-6-sol` + `high` |
+| testing | `gpt-6-luna` + `medium` |
+| built-in explorer | `gpt-6-luna` + `medium` |
+| clean-context ADR adversary | `gpt-6-astra` + `xhigh`; `max` для необратимого решения, задевающего инвариант |
 
 Ролевые пары атомарны: `model` и `model_reasoning_effort` задаются вместе. Setup/update сверяет exact slug с runtime catalog, не угадывает alias и сохраняет пользовательские overrides через diff-подтверждение. Если pair недоступна, миграция остаётся pending до обновления Codex или подтверждённого override.
 
-Каждый ADR получает два прохода: `$qtim-grill` и независимого read-only Sol-оппонента в новом thread без истории. Результат остаётся в самом ADR строкой `adr-stress-test: ...`; этот design gate работает даже когда optional risk-based review кода выключен.
+Каждый ADR получает два прохода: `$qtim-grill` и независимого read-only Astra-оппонента в новом thread без истории. Результат остаётся в самом ADR строкой `adr-stress-test: astra-adversary (xhigh|max) — N findings, M учтено`; этот design gate работает даже когда optional risk-based review кода выключен.
 
 ## Установка
 

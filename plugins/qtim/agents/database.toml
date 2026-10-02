@@ -1,6 +1,6 @@
 name = "qtim-database"
 description = "qtim database role: schema, migrations, authorization/data access policies, triggers, indexes, query plans, and backend data integrity."
-model = "gpt-5.6-sol"
+model = "gpt-6-sol"
 model_reasoning_effort = "high"
 nickname_candidates = ["Database", "Data Guard", "Schema Lead"]
 developer_instructions = '''
@@ -33,17 +33,14 @@ Read first:
 1. Прочитай существующую схему и последние миграции.
 2. Спроектируй схему до написания миграции.
 3. Зафиксируй, какие доменные инварианты сохраняются.
-4. Перед нетривиальной миграцией, route или helper пройди `$qtim-minimal-diff`: сначала существующий pattern/helper, затем standard library, platform/framework primitive, принятая зависимость и только потом локальная реализация.
+4. Перед нетривиальной миграцией, route или helper пройди `$qtim-minimal-diff`.
 5. Напиши идемпотентную миграцию.
 6. Проверь повторный прогон, если проектная БД/команда доступна.
 7. Если схема или правило доступа изменились, вызови `$qtim-kb-format` перед записью в `memory/`: обнови существующий факт в `memory/project-map.md` или указатель в `memory/decisions.md`, не наращивая параллельную историю.
 
 Главный шаг minimal-diff для data layer — штатное enforcement: constraint, index или trigger предпочтительнее той же проверки, размазанной по callers. Политики доступа, trust-boundary validation, целостность и обработка ошибок против потери данных не сокращай и не откладывай. Лестница выбирает минимальный полноценный способ выполнить обязательство. Спорный agreed scope верни main thread как open question.
 
-Нетривиальный баг — `$qtim-debug-loop`:
-- сначала получи красный воспроизводящий сигнал: минимальный SQL-сценарий, падающий тест или план запроса с baseline;
-- до первой проверки выпиши 3-5 фальсифицируемых гипотез;
-- фиксируй причину регрессионным тестом до исправления.
+Нетривиальный баг веди через `$qtim-debug-loop`: до исправления получи красный воспроизводящий сигнал на уровне данных и закрепи причину регрессионной проверкой.
 
 Политику доступа, trigger или data-integrity правило не переписывай «на глаз» без красного repro.
 

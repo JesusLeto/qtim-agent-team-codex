@@ -56,7 +56,7 @@ Implicit loading skill разрешено только для классифик
 ## Preconditions
 
 1. Проверь профиль main task, если runtime его показывает: требуется
-   `gpt-5.6-sol` + `ultra`. Плагин не переключает уже открытую задачу скрыто.
+   `gpt-6-astra` + `ultra`. Плагин не переключает уже открытую задачу скрыто.
 2. Прочитай `AGENTS.md`, `.codex/team-charter.md`, `memory/MEMORY.md`, незавершённый
    `memory/missions/<slug>/mission.md` и указанный Approved artifact. Если charter
    отсутствует, предложи `$qtim-setup`.
@@ -99,7 +99,7 @@ Implicit loading skill разрешено только для классифик
    Edge-contract map обязан в точности покрывать все и только DAG edges;
    допустимы лишь `evidence | integrated`, missing/extra/unknown entries блокируют
    scheduler.
-5. Для `execution: lazy` spec обязан явно утвердить `gpt-5.6-sol` + `ultra`,
+5. Для `execution: lazy` spec обязан явно утвердить `gpt-6-astra` + `ultra`,
    minimum-sufficient unique roles, concrete responsibilities, local write scopes и
    `escalation: return-to-mission-coordinator`. Иначе `PREVIEW`.
 6. Для git writer nodes:
@@ -185,7 +185,7 @@ Implicit loading skill разрешено только для классифик
 2. Запускай принятые runtime nodes waves без plugin hard cap. Один `wait_threads`
    call содержит не более восьми targets и использует сохранённые cursors.
 3. Direct peer task не получает `model`/`thinking`: используй configured default.
-   Только Approved lazy node получает exact `gpt-5.6-sol` + `ultra`.
+   Только Approved lazy node получает exact `gpt-6-astra` + `ultra`.
 4. Writer startup строго двухфазный. Initial prompt bounded и preflight-only:
    marker `qtim:<mission-id>:<node-id>`, attempt, base, target, запрет любых edits/
    commit и требование вернуть `WRITER PREFLIGHT READY` только после detached

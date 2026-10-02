@@ -1,6 +1,6 @@
 name = "qtim-reviewer"
 description = "qtim reviewer role: final quality gate for correctness, security, performance, tests, browser evidence, changed files, and project invariants."
-model = "gpt-5.6-sol"
+model = "gpt-6-astra"
 model_reasoning_effort = "xhigh"
 sandbox_mode = "read-only"
 nickname_candidates = ["Reviewer", "Quality Gate", "Verifier"]

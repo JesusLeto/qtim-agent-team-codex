@@ -1,6 +1,6 @@
 {
   "name": "qtim",
-  "version": "2.15.0",
+  "version": "2.15.1",
   "description": "Codex-native team orchestration with bounded verification, knowledge-base refresh, project-specific agents, risk-based review, PM planning, and explicit cross-dialog missions.",
   "author": {
     "name": "Антон Фокин"
@@ -24,7 +24,7 @@
   "interface": {
     "displayName": "qtim",
     "shortDescription": "Bootstrap Codex teams and cross-dialog missions",
-    "longDescription": "qtim adapts a project into a Codex-native team workflow for developers and PM/analysts. Setup generates a compact automatically loaded AGENTS contract, a track-aware charter, explicit Sol/Terra role profiles and durable memory. $qtim-minimal-diff selects the smallest complete design or implementation without cutting protected obligations. Reviewer is mechanically read-only; tester owns the recorded dev-server command and can use an opt-in one-retry browser-evidence gate. PM handoff routes by execution topology. Explicit $qtim-mission coordinates a validated DAG of visible Codex App tasks: read-only analysis, bounded node-local lazy teams, isolated writer worktrees, topological commit integration, clean-context verification, bounded fixes, and fail-visible status/resume/stop.",
+    "longDescription": "qtim adapts a project into a Codex-native team workflow for developers and PM/analysts. Setup generates a compact automatically loaded AGENTS contract, a track-aware charter, explicit GPT-6 Astra/Sol/Luna role profiles and durable memory. $qtim-minimal-diff selects the smallest complete design or implementation without cutting protected obligations. Reviewer is mechanically read-only; tester owns the recorded dev-server command and can use an opt-in one-retry browser-evidence gate. PM handoff routes by execution topology. Explicit $qtim-mission coordinates a validated DAG of visible Codex App tasks: read-only analysis, bounded node-local lazy teams, isolated writer worktrees, topological commit integration, clean-context verification, bounded fixes, and fail-visible status/resume/stop.",
     "developerName": "Антон Фокин",
     "category": "Developer Tools",
     "capabilities": [

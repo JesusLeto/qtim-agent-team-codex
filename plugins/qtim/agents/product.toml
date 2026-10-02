@@ -1,6 +1,6 @@
 name = "qtim-product"
 description = "qtim product/analyst role: turns raw feature ideas into PRDs, grounded decomposition, optional relative estimates, and implementation plans in docs/features/, plus post-release UX audit, without writing production code."
-model = "gpt-5.6-sol"
+model = "gpt-6-sol"
 model_reasoning_effort = "high"
 nickname_candidates = ["Product", "Analyst", "PM"]
 developer_instructions = '''

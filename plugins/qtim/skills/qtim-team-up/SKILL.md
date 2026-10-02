@@ -18,7 +18,7 @@ Use Codex subagent threads and custom agents. Do not assume a hidden persistent 
    - `../../reference/orchestration-patterns.md`;
    - `../../reference/independent-review.md`;
    - `../../reference/model-profiles.md`.
-   Проверь профиль main task, если runtime exposes metadata: qtim team-lead должен работать на `gpt-5.6-sol` + `ultra`. Если профиль другой, остановись до fan-out и попроси пользователя открыть новую задачу с Sol/Ultra; qtim не переключает текущий task скрыто.
+   Проверь профиль main task, если runtime exposes metadata: qtim team-lead должен работать на `gpt-6-astra` + `ultra`. Если профиль другой, остановись до fan-out и попроси пользователя открыть новую задачу с Astra/Ultra; qtim не переключает текущий task скрыто.
 4. Проверь `memory/epic-state.md` (его пишет `$qtim-team-down` при незавершённом эпике): если файл есть и эпик не закрыт — после подъёма команды покажи резюме и предложи продолжить с зафиксированного места, восстановив задачи из «В полёте» в видимом плане с их ролями.
 5. Если задача ссылается на фичу из `docs/features/<slug>/`, прочитай `plan.md` + `prd.md` полного трека или единый `feature-brief.md` fast-path как источник scope и acceptance criteria. До работы переведи плановый документ и связанные артефакты в `In Development`; только после gates — в `Done`. Отклонения с обоснованием и новые edge cases фиксируй в «Истории изменений» выбранного планового документа.
 
@@ -57,8 +57,8 @@ Use custom agent types from `.codex/agents/*.toml` when Codex exposes them. If t
 
 ## Model And Reasoning Policy
 
-- Не переключай модель, reasoning или Fast уже открытого task. qtim team-lead prerequisite — `gpt-5.6-sol` + `ultra`; этот профиль выбирает пользователь при старте task.
-- Используй exact role pair из загруженных TOML. Built-in `explorer` запускай на `gpt-5.6-luna` + `medium`. Не повышай role agents до `max`/`ultra`; `max` разрешён только отдельному clean-context ADR adversary по правилу риска.
+- Не переключай модель, reasoning или Fast уже открытого task. qtim team-lead prerequisite — `gpt-6-astra` + `ultra`; этот профиль выбирает пользователь при старте task.
+- Используй exact role pair из загруженных TOML. Built-in `explorer` запускай на `gpt-6-luna` + `medium`. Не повышай role agents до `max`/`ultra`; `max` разрешён только отдельному clean-context ADR adversary по правилу риска.
 - `Ultra` у main task разрешает Codex proactively делегировать внутри scope этого вызова, но не означает «спавнить все роли». Execution depth A/B/C/D, roster и write scopes по-прежнему определяет main thread.
 - Child agents не спавнят qtim-команду рекурсивно. Дополнительные роли спавнит main thread; fan-out ограничивай доступными slots и разбивай на batches, если независимых работ больше.
 
@@ -99,7 +99,7 @@ For implementation agents, remind them that other agents may edit in parallel an
 ## Coordination Flow
 
 1. Run design first for non-trivial work: architect produces brief/ADR and open questions.
-2. Если architect создал ADR, **до** user approval main thread запускает отдельного read-only adversary без истории (`fork_turns = "none"` или runtime-эквивалент) на `gpt-5.6-sol` + `xhigh`; необратимое решение, затрагивающее документированный инвариант, -> `max`. Передай только ADR, инварианты и проверяемые paths. Верни findings architect для верификации и не продолжай к approval, пока в ADR нет `adr-stress-test:` со счётчиком или честным `skipped — <reason>`. Optional independent code review не выключает этот шаг.
+2. Если architect создал ADR, **до** user approval main thread запускает отдельного read-only adversary без истории (`fork_turns = "none"` или runtime-эквивалент) на `gpt-6-astra` + `xhigh`; необратимое решение, затрагивающее документированный инвариант, -> `max`. Передай только ADR, инварианты и проверяемые paths. Верни findings architect для верификации и не продолжай к approval, пока в ADR нет `adr-stress-test:` со счётчиком или честным `skipped — <reason>`. Optional independent code review не выключает этот шаг.
 3. Ask for user approval before irreversible or ambiguous work not covered by the Approved plan, following `intake-protocol.md`.
 4. Parallelize only disjoint work scopes; `Ultra` не отменяет этот gate и не является причиной увеличить fan-out.
 5. Route implementation by ownership.

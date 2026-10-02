@@ -2,6 +2,29 @@
 
 Версии соответствуют `version` в `plugins/qtim/.codex-plugin/plugin.json` (semver).
 
+## 2.15.1 — 2026-10-02
+
+Модельная матрица qtim переведена на точные профили GPT-6 в Codex App.
+
+### Изменено
+
+- Team-lead, architect, reviewer и независимый ADR adversary используют
+  `gpt-6-astra` с прежними уровнями reasoning; database, frontend и product —
+  `gpt-6-sol` + `high`; testing и встроенный explorer — `gpt-6-luna` + `medium`.
+- `$qtim-setup`, командные workflow и справочники используют новые пары;
+  `$qtim-doctor` проверяет прежние профили для stamps до 2.15.0 и GPT-6 для
+  2.15.1+. ADR marker стал `astra-adversary`.
+- `$qtim-update` переносит только распознанные qtim defaults, сохраняет
+  пользовательские overrides и оставляет миграцию pending, если точная пара
+  недоступна в runtime. После обновления agent TOML нужна новая задача Codex.
+- В шаблонах architect, database и frontend сокращены дубли пошаговых инструкций
+  уже вызываемых skills; границы ролей, инварианты и проверочные gates сохранены.
+
+### Совместимость
+
+- CLI catalog может отставать от Codex App: доступность exact model/reasoning
+  pair проверяется на той поверхности, где запускается команда.
+
 ## 2.15.0 — 2026-10-02
 
 Исправления по аудиту использования qtim: ограниченные повторные проверки и

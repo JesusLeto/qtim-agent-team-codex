@@ -59,12 +59,12 @@ need(
 )
 
 expected = {
-    "architect.toml": ("qtim-architect", "gpt-5.6-sol", "xhigh"),
-    "database.toml": ("qtim-database", "gpt-5.6-sol", "high"),
-    "frontend.toml": ("qtim-frontend", "gpt-5.6-sol", "high"),
-    "product.toml": ("qtim-product", "gpt-5.6-sol", "high"),
-    "reviewer.toml": ("qtim-reviewer", "gpt-5.6-sol", "xhigh"),
-    "testing.toml": ("qtim-testing", "gpt-5.6-terra", "medium"),
+    "architect.toml": ("qtim-architect", "gpt-6-astra", "xhigh"),
+    "database.toml": ("qtim-database", "gpt-6-sol", "high"),
+    "frontend.toml": ("qtim-frontend", "gpt-6-sol", "high"),
+    "product.toml": ("qtim-product", "gpt-6-sol", "high"),
+    "reviewer.toml": ("qtim-reviewer", "gpt-6-astra", "xhigh"),
+    "testing.toml": ("qtim-testing", "gpt-6-luna", "medium"),
 }
 minimal_diff_agents = {"architect.toml", "database.toml", "frontend.toml", "reviewer.toml"}
 for filename, policy in expected.items():
