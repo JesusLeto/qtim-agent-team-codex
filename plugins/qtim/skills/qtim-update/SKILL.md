@@ -10,7 +10,7 @@ description: "Use when the user wants to check or upgrade qtim in Codex: reports
 ## Step 1: Determine Versions
 
 1. Версия установленного плагина: прочитай `../../.codex-plugin/plugin.json`, поле `version`.
-2. Версия команды в проекте: stamp `<!-- qtim-version: X.Y.Z -->` в первой строке `.codex/team-charter.md`.
+2. Версия команды в проекте: stamp `<!-- qtim-version: <semver> -->` в первой строке `.codex/team-charter.md`.
    - Charter отсутствует — команды в проекте нет: предложи `$qtim-setup` и остановись.
    - Charter есть, stamp отсутствует — состояние legacy (сгенерировано qtim < 2.2.0): определи фактический уровень по признакам из `../../reference/upgrade-notes.md` (track-маркеры есть -> 2.1.0, нет -> 2.0.0 или старше).
 
@@ -33,7 +33,7 @@ codex plugin add qtim@qtim-agent-team              # переустановит�
 
 ## Step 3: Migrate Project State
 
-Только если plugin version новее project version. Если stamp проекта новее плагина — не даунгрейдь: скажи, что устарел сам плагин, дай команды из Step 2 и остановись.
+Сравни полные SemVer, включая prerelease: `2.16.0-experimental.1` новее `2.15.1`, но старее стабильной `2.16.0`. Не отбрасывай суффикс stamp. Только если plugin version новее project version. Если stamp проекта новее плагина — не даунгрейдь: скажи, что устарел сам плагин, дай команды из Step 2 и остановись.
 
 1. Прочитай `../../reference/upgrade-notes.md` и собери шаги всех версий между project version и plugin version. Применяй **oldest -> newest**; секции в notes лежат newest-first, поэтому нужный диапазон читается снизу вверх. Прямой upgrade не начинай с целевой версии.
 2. Просмотри `.codex/agents/*.toml` и сначала разложи файлы на три класса:
@@ -59,7 +59,10 @@ codex plugin add qtim@qtim-agent-team              # переустановит�
    Ручные правки и user overrides не перезаписывай молча. Переименованный/
    отсутствующий target, несколько кандидатов или несовпадающее имя —
    `pending`, а не догадка, новый дубликат или whole-file overwrite. Роль вне
-   текущего roster считается not applicable.
+   текущего roster считается not applicable. Исключение только для явно названного
+   additive missing-role шага upgrade notes: он позволяет создать отсутствующий
+   PM reviewer после показанного diff/approval и проверки отсутствия collision;
+   переименованный, foreign или неоднозначный файл не заменяется.
 3. Если существует `.codex/hooks.json`, выполни hook-миграции из upgrade notes отдельно от agent templates. Распознавай qtim-owned handlers по совокупности fingerprints (guard `.codex/team-charter.md`, `[qtim` / `$qtim-*`, `qtim-version:`, тексты про реальные артефакты или проверку затронутого слоя), а не только по event/matcher. Сохраняй порядок и содержимое неизвестных пользовательских events/groups/handlers; если ownership неоднозначен, покажи entry и спроси.
 4. Managed qtim contract в `AGENTS.md` изменяй только между `qtim:contract:start/end`; пользовательский текст вне markers сохраняй. `.codex/screenshots-gate.json` не создавай без нового explicit opt-in и валидируй как safe repo-relative policy.
 5. Покажи план миграции: какие файлы, handlers и engine-managed блоки меняются
@@ -102,6 +105,7 @@ codex plugin add qtim@qtim-agent-team              # переустановит�
   один раз и runtime registry не tracked;
 - для PM track со stamp 2.15.0+ корневой `.gitignore` содержит ровно одну строку
   `docs/features/**/.work/`; существующие tracked файлы не удалены миграцией;
+- для PM track со stamp 2.16.0-experimental.1+ reviewer присутствует, механически read-only и содержит SPEC_REVIEW независимо от code-review toggle; dev readiness проверяется отдельно по dev track/исполнителям;
 - в изменённых файлах нет plugin-internal путей (`../../...`);
 - финальный ответ: версии до/после, изменённые файлы, compatible overrides и pending; при pending явно скажи, что stamps остались на последней полностью завершённой версии и целевая migration не завершена. Если менялся любой `.codex/agents/*.toml`, новая задача Codex **обязательна** перед qtim workflow. Если менялись hooks, открой `/hooks`, заново review/trust изменённые definitions; если текущий runtime не подхватил их после review, открой новую задачу. Если agent TOML и hooks не менялись, дополнительный restart не нужен.
 

@@ -28,6 +28,8 @@ lead не создаёт peer tasks или новую mission; local subagents �
   recommendation не считается таким preview;
 - `PREVIEW` — mission вызвана явно, но цель сырая, approval отсутствует, граф,
   lazy profile, integration target, budget или preflight требуют решения;
+  явное «запускай показанную команду» в ответ на feature recommendation
+  `$qtim-mission, preview ...` разрешает только подготовку полного preview;
   planning/evaluation-only формулировка (`только спланируй`, `составь план`,
   `оцени`, `проанализируй`) также всегда остаётся `PREVIEW` без peer tasks;
 - `RECOMMEND` — другой workflow обнаружил mission-shaped topology.

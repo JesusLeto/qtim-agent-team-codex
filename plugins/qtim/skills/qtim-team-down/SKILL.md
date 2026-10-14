@@ -29,6 +29,8 @@ In Codex there is no persistent team object on disk; "down" means close active a
    ## Сделано
    ## В полёте (задача — роль — статус — следующий шаг)
    ## Открытые вопросы / блокеры
+   ## Контракт, стабильные WI/пакеты и оставшийся review budget
+   ## Пути к review/gate receipts и их ограничения
    ## Следующий шаг при продолжении
    ```
 
@@ -36,12 +38,15 @@ In Codex there is no persistent team object on disk; "down" means close active a
 6. Если связанная фича в `docs/features/<slug>/` действительно достигла `Done`
    по проверенной приёмке и есть evidence влития, получи решение владельца
    об архивации и очистке (учти уже данное в сессии). Только после него
-   переведи фичу в `Archived` по `../../reference/feature-pipeline.md`:
-   сохрани `prd.md`/`plan.md` или `feature-brief.md`, обнови существующий
+   переведи новую spec в `Archived` по `../../reference/feature-pipeline.md`:
+   сохрани `spec.md` (или legacy `prd.md`/`plan.md`/`feature-brief.md`), обнови существующий
    короткий итоговый указатель в `memory/decisions.md`, удали только
    идентифицированные как временные файлы `.work/`. Само сворачивание команды
    не доказывает `Done` и не разрешает удаление; без evidence или решения
    владельца сохрани статус `Done` и сообщи о незавершённой архивации.
+   Legacy-контракт остаётся без автоматических правок/конвертации: архивный
+   статус и итоговый указатель фиксируй в памяти. Main thread единолично
+   обновляет статус новой spec.
 7. Mark any unfinished work clearly in the visible plan or final report.
 8. Tell the user what remains open and whether a new Codex task is recommended.
 

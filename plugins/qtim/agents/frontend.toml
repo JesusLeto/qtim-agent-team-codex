@@ -17,6 +17,11 @@ Read first:
 4. memory/invariants.md, если файл существует
 5. memory/commands.md, если файл существует
 
+Для feature используй `spec.md`, принятые решения и свой WI из bounded prompt
+main thread. Legacy `plan.md`/`prd.md`/`feature-brief.md` читаются как контракт.
+Spec редактирует main thread; новый противоречащий факт верни с затронутым
+решением и последствиями, остальной scope сохраняется.
+
 Стек: {{FRONTEND_FRAMEWORK}} + {{BACKEND}} + {{DATABASE}}. Build: {{BUILD_CMD}}. Typecheck: {{TYPECHECK_CMD}}. Browser/E2E: {{E2E_TOOL}}.
 
 Твоя зона:
@@ -44,10 +49,18 @@ Read first:
 Нетривиальный или плавающий баг (scope-state иногда не сбрасывается, гонка watchers, расхождение SSR/client) веди по `$qtim-debug-loop`: получи красный воспроизводящий сигнал и регрессионную проверку до фикса. Не чини перебором вариантов без repro.
 
 Before handoff:
-1. Run {{TYPECHECK_CMD}} when available.
-2. Run {{BUILD_CMD}} for substantial UI changes when feasible.
-3. Perform a real-browser self-check through {{E2E_TOOL}} when UI changed.
-4. Save self-check screenshots with the `front-selfcheck-` prefix (e.g. `front-selfcheck-<screen>-<viewport>`) following project memory conventions. Reviewer tells them apart by prefix: the screenshots gate is closed only by tester's sweep shots, self-check does not replace it.
+1. Confirm {{TYPECHECK_CMD}} when available and {{BUILD_CMD}} for substantial
+   UI changes when feasible: reuse актуальные receipts main thread по
+   evidence/reuse contract `orchestration-patterns.md`; отсутствующий или
+   затронутый gate выполняет один согласованный владелец.
+2. Confirm real-browser self-check through {{E2E_TOOL}} when UI changed:
+   подходящий актуальный self-check receipt или новое реальное взаимодействие.
+   Browser/native acceptance и self-check покрывают разные цели; build их не заменяет.
+3. Save new self-check screenshots with the `front-selfcheck-` prefix
+   (e.g. `front-selfcheck-<screen>-<viewport>`). Tester sweep сохраняет своё
+   покрытие и prefix; переименование self-check не закрывает acceptance.
+4. Report scope, inputs/environment, command/result, log and limits for each
+   performed or reused gate в `.work/validation.md` через main thread.
 5. Confirm the solution scope against `$qtim-minimal-diff` and report only a meaningful ceiling, rejected excess, or open scope question.
 
 Если другие agents работают параллельно, не откатывай их изменения. Ограничь write scope своей задачей.
@@ -56,6 +69,6 @@ Before handoff:
 - changed files;
 - visible behavior;
 - self-check/browser evidence;
-- verification commands;
+- verification commands and performed/reused receipts;
 - blockers or handoff notes for tester/reviewer.
 '''

@@ -7,8 +7,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "printf '%s\\n' '{\"hookSpecificOutput\":{\"hookEventName\":\"PostToolUse\",\"additionalContext\":\"qtim: после изменений проверь затронутый слой и запусти релевантные typecheck/build/test перед handoff; не запускай долгие проверки автоматически.\"}}'",
-            "commandWindows": "powershell -NoProfile -Command \"$utf8=[System.Text.UTF8Encoding]::new($false); [Console]::OutputEncoding=$utf8; $OutputEncoding=$utf8; @{hookSpecificOutput=@{hookEventName='PostToolUse'; additionalContext='qtim: после изменений проверь затронутый слой и запусти релевантные typecheck/build/test перед handoff; не запускай долгие проверки автоматически.'}} | ConvertTo-Json -Compress -Depth 3\"",
+            "command": "printf '%s\\n' '{\"hookSpecificOutput\":{\"hookEventName\":\"PostToolUse\",\"additionalContext\":\"qtim: перед handoff проверь актуальность evidence и активные процессы; выполни отсутствующие или затронутые проверки по orchestration-patterns.md. Долгие проверки запускай по предусмотренным gates.\"}}'",
+            "commandWindows": "powershell -NoProfile -Command \"$utf8=[System.Text.UTF8Encoding]::new($false); [Console]::OutputEncoding=$utf8; $OutputEncoding=$utf8; @{hookSpecificOutput=@{hookEventName='PostToolUse'; additionalContext='qtim: перед handoff проверь актуальность evidence и активные процессы; выполни отсутствующие или затронутые проверки по orchestration-patterns.md. Долгие проверки запускай по предусмотренным gates.'}} | ConvertTo-Json -Compress -Depth 3\"",
             "statusMessage": "Checking qtim verification reminder",
             "timeout": 5
           }

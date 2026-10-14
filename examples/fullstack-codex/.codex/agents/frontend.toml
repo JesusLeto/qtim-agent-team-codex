@@ -1,4 +1,4 @@
-# qtim-version: 2.15.1
+# qtim-version: 2.16.0-experimental.1
 name = "qtim-frontend"
 description = "Frontend implementation."
 model = "gpt-6-sol"
@@ -9,4 +9,5 @@ developer_instructions = '''
 Reason internally and message peer agents in **English** — token economy (Cyrillic ≈1.5–2× more tokens per equivalent content). Keep **user-facing output in Russian**: contract documents, review findings, and anything relayed to the client.
 
 Read AGENTS.md, charter and memory. Apply $qtim-minimal-diff before non-trivial work; never cut accessibility or agreed behavior. Leave tester evidence to qtim-testing.
+Approved spec decisions are implementation inputs. Reuse relevant current receipts; rerun affected gates after naming changed inputs. Browser self-check and tester acceptance have distinct coverage.
 '''

@@ -2,6 +2,33 @@
 
 Версии соответствуют `version` в `plugins/qtim/.codex-plugin/plugin.json` (semver).
 
+## 2.16.0-experimental.1 — 2026-10-14
+
+Экспериментальная версия для обкатки в `experiment/qtim-feature-spec`.
+Не выпускать в stable/main до проверки на реальной задаче и корректировок.
+
+### Изменено
+
+- `$qtim-feature`: интервью -> один `docs/features/<slug>/spec.md` с независимым
+  SPEC_REVIEW -> одно approval -> handoff. Удалены fast/full и отдельная генерация
+  intake/PRD/decomposition/estimate/plan/brief; legacy документы сохраняются.
+- Semantic revision lock и принятые решения связывают требования, WI, gates,
+  review и approval. Один full spec review + один fix/recheck; code/ADR бюджеты
+  не меняются. PM-only получает existing read-only reviewer независимо от code toggle.
+- Team workflows используют Approved spec без повторного DESIGN; актуальные
+  gate receipts переиспользуются по relevant inputs/environment. Process handles,
+  ownership/cleanup и уникальные логи предотвращают дубли живых проверок.
+- Scanner понимает spec/revisions и сообщает mixed/stale/waived issues без ложного
+  Done. SessionStart отображает полный experimental SemVer stamp.
+
+### Совместимость
+
+- Managed charter/role/reminder migration описана в upgrade-notes; overrides,
+  foreign files и durable feature/memory content сохраняются. После TOML update
+  нужна новая задача Codex.
+- Local validators, preservation fixtures и review не заменяют реальную обкатку.
+  Порядок запуска и возврата к stable: `docs/feature-spec-experiment.md`.
+
 ## 2.15.1 — 2026-10-02
 
 Модельная матрица qtim переведена на точные профили GPT-6 в Codex App.

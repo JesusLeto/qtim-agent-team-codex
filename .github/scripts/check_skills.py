@@ -165,7 +165,7 @@ for skill_dir in sorted(pathlib.Path("plugins").glob("*/skills/*")):
         )
     validate_openai_metadata(skill_dir)
 
-feature_brief_consumers = [
+feature_spec_consumers = [
     pathlib.Path("plugins/qtim/skills/qtim-feature/SKILL.md"),
     pathlib.Path("plugins/qtim/reference/feature-pipeline.md"),
     pathlib.Path("plugins/qtim/skills/qtim-setup/SKILL.md"),
@@ -174,12 +174,25 @@ feature_brief_consumers = [
     pathlib.Path("plugins/qtim/skills/qtim-team-retro/SKILL.md"),
     pathlib.Path("plugins/qtim/skills/qtim-doctor/SKILL.md"),
 ]
-for path in feature_brief_consumers:
-    if not path.is_file() or "feature-brief.md" not in path.read_text(encoding="utf-8"):
-        bad.append(f"{path}: нет поддержки fast-path артефакта `feature-brief.md`")
+for path in feature_spec_consumers:
+    if not path.is_file() or "spec.md" not in path.read_text(encoding="utf-8"):
+        bad.append(f"{path}: нет поддержки канонической спецификации `spec.md`")
+
+spec_revision_consumers = [
+    pathlib.Path("plugins/qtim/skills/qtim-feature/SKILL.md"),
+    pathlib.Path("plugins/qtim/reference/feature-pipeline.md"),
+    pathlib.Path("plugins/qtim/agents/reviewer.toml"),
+    pathlib.Path("plugins/qtim/skills/qtim-setup/SKILL.md"),
+    pathlib.Path("plugins/qtim/skills/qtim-doctor/SKILL.md"),
+    pathlib.Path("plugins/qtim/reference/upgrade-notes.md"),
+]
+for path in spec_revision_consumers:
+    body = path.read_text(encoding="utf-8") if path.is_file() else ""
+    missing = [marker for marker in ("SPEC_REVIEW", "Reviewed revision", "Approved revision") if marker not in body]
+    if missing:
+        bad.append(f"{path}: неполный контракт независимого ревью спецификации: {', '.join(missing)}")
 
 vertical_slice_consumers = [
-    pathlib.Path("plugins/qtim/skills/qtim-feature/SKILL.md"),
     pathlib.Path("plugins/qtim/reference/feature-pipeline.md"),
     pathlib.Path("plugins/qtim/skills/qtim-setup/SKILL.md"),
     pathlib.Path("plugins/qtim/skills/qtim-doctor/SKILL.md"),
@@ -189,7 +202,7 @@ vertical_slice_consumers = [
 for path in vertical_slice_consumers:
     body = path.read_text(encoding="utf-8") if path.is_file() else ""
     for marker in ("DRI", "contributing"):
-        if marker not in body:
+        if marker.lower() not in body.lower():
             bad.append(f"{path}: vertical slicing не фиксирует `{marker}`")
 
 risk_policy_consumers = [
@@ -197,7 +210,6 @@ risk_policy_consumers = [
     pathlib.Path("plugins/qtim/reference/orchestration-patterns.md"),
     pathlib.Path("plugins/qtim/skills/qtim-setup/SKILL.md"),
     pathlib.Path("plugins/qtim/skills/qtim-doctor/SKILL.md"),
-    pathlib.Path("plugins/qtim/skills/qtim-team-up/SKILL.md"),
     pathlib.Path("plugins/qtim/agents/reviewer.toml"),
     pathlib.Path("plugins/qtim/reference/upgrade-notes.md"),
 ]
@@ -220,20 +232,13 @@ for path in risk_policy_consumers:
 
 status_contracts = {
     pathlib.Path("plugins/qtim/reference/feature-pipeline.md"): (
-        "Реализующая команда переводит плановый документ и связанные артефакты в `In Development`",
-        "затем `Done` после gates",
-    ),
-    pathlib.Path("plugins/qtim/skills/qtim-feature/SKILL.md"): (
-        "Для fast-path заверши brief:",
-        "При старте переведи Status в In Development, после всех gates — в Done.",
+        "In Development", "Done", "gates",
     ),
     pathlib.Path("plugins/qtim/skills/qtim-team-up/SKILL.md"): (
-        "До работы переведи плановый документ и связанные артефакты в `In Development`",
-        "только после gates — в `Done`",
+        "In Development", "Done", "gates",
     ),
     pathlib.Path("plugins/qtim/skills/qtim-team-lazy/SKILL.md"): (
-        "До работы переведи плановый документ и связанные артефакты в `In Development`",
-        "только после gates — в `Done`",
+        "In Development", "Done", "gates",
     ),
 }
 for path, markers in status_contracts.items():

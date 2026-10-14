@@ -39,7 +39,8 @@ for marker in (
     "integrate topologically", "clean-context verifier",
     "$qtim-minimal-diff", "recommendation-only",
     "Approved scope", "fix-and-recheck", "$qtim-kb-format",
-    "$qtim-kb-refresh", "PRD-only", "estimate.md", "Archived",
+    "$qtim-kb-refresh", "spec.md", "SPEC_REVIEW", "Reviewed revision",
+    "Approved revision", "Archived",
 ):
     need(marker in charter, f"charter missing {marker}")
 for marker in (
@@ -89,7 +90,8 @@ for filename, policy in expected.items():
         need("$qtim-minimal-diff" in text, f"{filename} has no minimal-diff contract")
     if filename == "reviewer.toml":
         need(payload.get("sandbox_mode") == "read-only", "reviewer is not read-only")
-        for marker in ("Approved scope", "fix-and-recheck", "$qtim-kb-format"):
+        for marker in ("Approved scope", "fix-and-recheck", "$qtim-kb-format", "SPEC_REVIEW",
+                       "READY_FOR_APPROVAL", "CHANGES_REQUESTED"):
             need(marker in text, f"reviewer has no {marker} contract")
     if filename == "testing.toml":
         need("npm run dev" in text, "tester has no dev command")

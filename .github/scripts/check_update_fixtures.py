@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate the 2.13 Extended-role and 2.14 language migrations."""
+"""Validate migration preservation fixtures; these do not execute Codex updates."""
 import json
 import pathlib
 import re
@@ -14,6 +14,21 @@ AMBIGUOUS_AFTER = FIXTURE / "ambiguous/after/.codex"
 LANGUAGE_FIXTURE = ROOT / ".github/fixtures/update-2.14-language"
 LANGUAGE_BEFORE = LANGUAGE_FIXTURE / "before"
 LANGUAGE_AFTER = LANGUAGE_FIXTURE / "after"
+FEATURE_FIXTURE = ROOT / ".github/fixtures/update-2.16-feature"
+FEATURE_BEFORE = FEATURE_FIXTURE / "before"
+FEATURE_AFTER = FEATURE_FIXTURE / "after"
+FEATURE_VERSION = "2.16.0-experimental.1"
+OLD_FEATURE_WORKFLOW = "Feature workflow: intake -> PRD -> decomposition -> optional estimate -> plan -> handoff."
+NEW_FEATURE_WORKFLOW = (
+    "Feature workflow: interview -> spec.md + SPEC_REVIEW -> approval -> handoff.\n"
+    "SPEC_REVIEW remains mandatory when code-review: disabled; this setting controls code review only.\n"
+    "Reviewed revision and Approved revision identify the current approved spec revision."
+)
+OLD_PRODUCT_WORKFLOW = "Produce intake.md, prd.md, decomposition.md, optional estimate.md and plan.md."
+NEW_PRODUCT_WORKFLOW = (
+    "Help the main editor interview and produce spec.md; preserve approved decisions "
+    "and request SPEC_REVIEW before owner approval."
+)
 BAD = []
 CUSTOM_BLOCK = (
     "\nПеред нетривиальной реализацией пройди `$qtim-minimal-diff`. "
@@ -100,6 +115,22 @@ def charter_preserved(before, after):
 
 def foreign_bytes_preserved(before, after):
     return bool(before) and before == after
+
+
+def feature_charter_preserved(before, after):
+    normalized = after.replace(
+        f"<!-- qtim-version: {FEATURE_VERSION} -->", "<!-- qtim-version: 2.15.1 -->", 1
+    ).replace("| reviewer | qtim-reviewer |\n", "", 1).replace(
+        NEW_FEATURE_WORKFLOW, OLD_FEATURE_WORKFLOW, 1
+    )
+    return after.count(NEW_FEATURE_WORKFLOW) == 1 and normalized == before
+
+
+def feature_product_preserved(before, after):
+    normalized = after.replace(
+        f"# qtim-version: {FEATURE_VERSION}", "# qtim-version: 2.15.1", 1
+    ).replace(NEW_PRODUCT_WORKFLOW, OLD_PRODUCT_WORKFLOW, 1)
+    return after.count(NEW_PRODUCT_WORKFLOW) == 1 and normalized == before
 
 
 def tree_snapshot(root):
@@ -245,6 +276,62 @@ need(
     "2.14 migration changed foreign agent bytes",
 )
 
+feature_before_charter = text(FEATURE_BEFORE / ".codex/team-charter.md")
+feature_after_charter = text(FEATURE_AFTER / ".codex/team-charter.md")
+feature_before_product = text(FEATURE_BEFORE / ".codex/agents/product.toml")
+feature_after_product = text(FEATURE_AFTER / ".codex/agents/product.toml")
+need(
+    feature_charter_preserved(feature_before_charter, feature_after_charter),
+    "experimental charter changed outside stamp, reviewer row and feature workflow",
+)
+need(
+    track_block(feature_before_charter, "dev") is None
+    and track_block(feature_after_charter, "dev") is None,
+    "PM-only migration invented a dev track",
+)
+need(
+    not (FEATURE_BEFORE / ".codex/agents/reviewer.toml").exists(),
+    "experimental control fixture already had a reviewer",
+)
+need(
+    feature_product_preserved(feature_before_product, feature_after_product),
+    "experimental product changed outside stamp and feature workflow",
+)
+feature_product_policy = parse_role(feature_after_product)
+need(
+    (feature_product_policy.get("model"), feature_product_policy.get("model_reasoning_effort"))
+    == ("gpt-6-astra", "high"),
+    "experimental migration lost the product's atomic user model override",
+)
+feature_reviewer = text(FEATURE_AFTER / ".codex/agents/reviewer.toml")
+feature_reviewer_policy = parse_role(feature_reviewer)
+need(feature_reviewer.startswith(f"# qtim-version: {FEATURE_VERSION}"), "experimental reviewer stamp mismatch")
+need(
+    (feature_reviewer_policy.get("name"), feature_reviewer_policy.get("model"),
+     feature_reviewer_policy.get("model_reasoning_effort"), feature_reviewer_policy.get("sandbox_mode"))
+    == ("qtim-reviewer", "gpt-6-astra", "xhigh", "read-only"),
+    "experimental PM reviewer lacks the atomic default policy or mechanical read-only sandbox",
+)
+for marker in ("SPEC_REVIEW", "READY_FOR_APPROVAL", "CHANGES_REQUESTED", "Reviewed revision", "Approved revision"):
+    need(marker in feature_reviewer, f"experimental reviewer missing {marker}")
+need(
+    re.search(r"^code-review: disabled$", feature_after_charter, re.MULTILINE) is not None
+    and "SPEC_REVIEW remains mandatory when code-review: disabled" in feature_after_charter,
+    "experimental spec review was disabled with the optional code review gate",
+)
+for relative in (".codex/agents/foreign-agent.toml", "docs/features/legacy/prd.md"):
+    need(
+        foreign_bytes_preserved(text(FEATURE_BEFORE / relative), text(FEATURE_AFTER / relative)),
+        f"experimental migration changed foreign or legacy bytes: {relative}",
+    )
+feature_before_tree = tree_snapshot(FEATURE_BEFORE)
+feature_after_tree = tree_snapshot(FEATURE_AFTER)
+need(
+    set(feature_after_tree) - set(feature_before_tree) == {".codex/agents/reviewer.toml"}
+    and set(feature_before_tree) <= set(feature_after_tree),
+    "experimental fixture deleted existing files or added unrelated state",
+)
+
 contract_markers = {
     ROOT / "plugins/qtim/skills/qtim-update/SKILL.md": (
         "qtim-generated custom role без bundled template",
@@ -280,6 +367,24 @@ for path, markers in contract_markers.items():
         need(marker in body, f"{path.relative_to(ROOT)} missing migration marker `{marker}`")
 
 if "--self-test" in sys.argv[1:]:
+    need(
+        not feature_product_preserved(feature_before_product, feature_after_product.replace(
+            'model_reasoning_effort = "high"', 'model_reasoning_effort = "xhigh"', 1
+        )),
+        "negative oracle accepted experimental product model-override loss",
+    )
+    need(
+        not feature_charter_preserved(feature_before_charter, feature_after_charter.replace(
+            "MANUAL-PM-FEATURE: preserve byte-for-byte.", "MANUAL-PM-FEATURE: changed.", 1
+        )),
+        "negative oracle accepted experimental manual PM text loss",
+    )
+    need(
+        not feature_charter_preserved(feature_before_charter, feature_after_charter.replace(
+            "SPEC_REVIEW remains mandatory when code-review: disabled; this setting controls code review only.\n", "", 1
+        )),
+        "negative oracle accepted experimental code-review toggle disabling spec review",
+    )
     manual_loss = after_role_text.replace(
         "Change deployment and CI code only inside the approved scope.\n",
         "",
@@ -391,6 +496,6 @@ if BAD:
     print("Extended update fixture validation failed:\n- " + "\n- ".join(BAD))
     sys.exit(1)
 if "--self-test" in sys.argv[1:]:
-    print("OK: update-fixture negative oracles reject 2.13/2.14 manual loss, foreign mutation, partial language, and ambiguous stamp drift")
+    print("OK: update-fixture negative oracles reject manual loss, foreign mutation, model-override loss, disabled spec review, partial language, and ambiguous stamp drift")
 else:
-    print("OK: 2.13 Extended and 2.14 language fixtures preserve all non-target and foreign bytes")
+    print("OK: 2.13/2.14 and experimental feature fixtures preserve non-target, legacy and foreign bytes (documented snapshots; no live migration executed)")

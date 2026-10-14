@@ -18,8 +18,9 @@ Retro — для эпиков режима C/D (`$qtim-team-lazy` с эскал�
 
 1. Видимый план, `memory/review-report.md` и `memory/bug-log.md` — только
    повторные блокеры, значимые решения и открытые риски.
-2. История `plan.md` или `feature-brief.md` — только отклонения, меняющие
-   будущую практику; не пересказывай хронологию.
+2. `spec.md` и `.work/validation.md` — только существенные отклонения и evidence,
+   меняющие будущую практику. Без spec читай legacy `plan.md`/`prd.md` или
+   `feature-brief.md`; контракт оставь без правок и конвертации.
 3. Подтверждаемый diff эпика: approved base/head, merge range или проверенный
    handoff. Только в этом scope ищи `minimal-diff:`; repository-wide совпадения
    не приписывай текущей работе.

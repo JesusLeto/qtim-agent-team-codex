@@ -30,6 +30,9 @@ SessionStart advisory — no-op. Точный ответ «Запускай пр
 Approved mission preview; feature recommendation сама по себе таким preview не
 является. Любой одиночный, fullwidth или незакрытый quote/code marker тоже
 fail-closed: parser не угадывает, где заканчивается цитата.
+Явный ответ «запускай показанную команду» на feature recommendation
+`$qtim-mission, preview ...` разрешает режим `PREVIEW`: подготовить полный
+preview без создания peers и дождаться его approval.
 Implicit skill loading включает лишь fail-closed classifier, не authorization.
 `status | resume | stop` требуют отдельной явной команды.
 
@@ -39,7 +42,7 @@ Implicit skill loading включает лишь fail-closed classifier, не au
 
 ```yaml
 missionId: payments-contract
-source: docs/features/payments/plan.md
+source: docs/features/payments/spec.md
 sourceStatus: Approved
 baseRevision: <sha>
 integrationTarget: codex/qtim-mission-payments-contract

@@ -33,7 +33,8 @@ TABLE_SEP_RE = re.compile(r"^\s*\|?\s*:?-{2,}[\s:|-]*$")
 RUN_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$")
 FEATURE_STATUS_RE = re.compile(r"^\s*(?:[-*>]\s*)?(?:\*\*)?(?:Status|Статус)(?:\*\*)?\s*:\s*(?:\*\*)?\s*(.*?)\s*$", re.I)
 REQUIRED_META = ("type", "genre", "audience", "updated", "checked", "status")
-CANON_FEATURES = {"feature-brief.md", "intake.md", "prd.md", "decomposition.md", "estimate.md", "plan.md"}
+LEGACY_FEATURES = {"feature-brief.md", "intake.md", "prd.md", "decomposition.md", "estimate.md", "plan.md"}
+CANON_FEATURES = LEGACY_FEATURES | {"spec.md"}
 ENTRY_WARN_WORDS = 1800
 
 
@@ -214,18 +215,60 @@ def format_issues(repo: Path, path: Path, text: str, meta: dict[str, str], refs:
 def feature_summary(repo: Path) -> dict[str, object]:
     statuses: Counter[str] = Counter()
     done: list[str] = []
+    issues: list[dict[str, object]] = []
+    folders: dict[Path, list[Path]] = {}
     for path in md_files(repo, "docs/features", skip_hidden=True):
-        if path.name not in CANON_FEATURES:
+        if path.name in CANON_FEATURES:
+            folders.setdefault(path.parent, []).append(path)
+    for _, paths in sorted(folders.items()):
+        spec = next((path for path in paths if path.name == "spec.md"), None)
+        if spec is not None:
+            fields: dict[str, str] = {}
+            duplicates: set[str] = set()
+            for _, line in content_lines(read_text(spec)):
+                match = re.match(
+                    r"^\s*(?:[-*>]\s*)?(?:\*\*)?(Canonical|Revision|Reviewed revision|Approved revision|Review verdict|Status)(?:\*\*)?\s*:\s*(.*?)\s*$",
+                    line, re.I,
+                )
+                if match:
+                    key = match.group(1).lower()
+                    if key in fields:
+                        duplicates.add(key)
+                    fields[key] = match.group(2).strip(" *`")
+            rel = spec.relative_to(repo).as_posix()
+            if len(paths) > 1 and fields.get("canonical") != "spec.md":
+                issues.append({"file": rel, "code": "feature_canonical_ambiguous"})
+                continue
+            revision = fields.get("revision", "")
+            status = fields.get("status", "")
+            if (duplicates or not re.fullmatch(r"[1-9][0-9]*", revision)
+                    or status not in {"Draft", "Approved", "In Development", "Done", "Archived"}):
+                issues.append({"file": rel, "code": "feature_spec_header_invalid"})
+                continue
+            if status != "Draft" and fields.get("review verdict") == "WAIVED":
+                issues.append({"file": rel, "code": "feature_spec_review_waived"})
+                continue
+            if status != "Draft" and (
+                fields.get("review verdict") != "READY_FOR_APPROVAL" or any(
+                    fields.get(key) != revision for key in ("reviewed revision", "approved revision")
+                )
+            ):
+                issues.append({"file": rel, "code": "feature_spec_revision_mismatch"})
+                continue
+            statuses[status] += 1
+            if status == "Done":
+                done.append(rel)
             continue
-        for _, line in content_lines(read_text(path)):
-            match = FEATURE_STATUS_RE.match(line)
-            if match:
-                status = match.group(1).strip(" *")
-                statuses[status] += 1
-                if status.lower() == "done":
-                    done.append(path.relative_to(repo).as_posix())
-                break
-    return {"status_counts": dict(sorted(statuses.items())), "done_artifacts": sorted(done)}
+        for path in paths:
+            for _, line in content_lines(read_text(path)):
+                match = FEATURE_STATUS_RE.match(line)
+                if match:
+                    status = match.group(1).strip(" *")
+                    statuses[status] += 1
+                    if status.lower() == "done":
+                        done.append(path.relative_to(repo).as_posix())
+                    break
+    return {"status_counts": dict(sorted(statuses.items())), "done_artifacts": sorted(done), "issues": issues}
 
 
 def overwrite_suspects(repo: Path, cache: dict[tuple[str, str], str | None]) -> list[dict[str, object]]:

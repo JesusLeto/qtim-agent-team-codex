@@ -15,6 +15,8 @@ writers изолированы worktree, commits integrate topologically чер�
 affected gate до locked exact-old ff-only promotion; portable state checkpoint-ится
 отдельно, затем отдельный verifier закрывает общий gate.
 После обновления используй `$qtim-update`, при сбое — `$qtim-doctor`.
+Новые feature используют одну spec.md с независимым SPEC_REVIEW до approval/handoff;
+режим ревью кода его не выключает. Правила ревизий и receipts — в charter.
 Перед записью `memory/` или `docs/features/` вызови `$qtim-kb-format`;
 при обнаруженном дрейфе предложи `$qtim-kb-refresh`.
 

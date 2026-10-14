@@ -7570,9 +7570,14 @@ def check_contract_files() -> None:
         "ESCALATION_REQUEST", "третий уровень", "standalone lazy mode",
     )
     require(
-        "plugins/qtim/skills/qtim-feature/SKILL.md",
+        "plugins/qtim/reference/feature-pipeline.md",
         "Что запускать дальше", "$qtim-mission", "Рекомендация", "Топология",
-        "Альтернатива", "base/integration target",
+        "Альтернатива", "base/integration target", "RECOMMEND",
+    )
+    require(
+        "plugins/qtim/skills/qtim-feature/SKILL.md",
+        "../../reference/feature-pipeline.md", "Execution Recommendation Gate",
+        "dev track/writers", "RECOMMEND", "Approved preview",
     )
     require(
         "plugins/qtim/skills/qtim-setup/SKILL.md",
