@@ -1,4 +1,4 @@
-# qtim-version: 2.15.1
+# qtim-version: 2.15.2
 name = "qtim-reviewer"
 description = "Independent final quality gate."
 model = "gpt-6-astra"

@@ -1,4 +1,4 @@
-# qtim-version: 2.15.1
+# qtim-version: 2.15.2
 name = "qtim-testing"
 description = "Real-browser and regression testing."
 model = "gpt-6-luna"

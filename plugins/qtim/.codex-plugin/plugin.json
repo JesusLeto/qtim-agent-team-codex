@@ -1,6 +1,6 @@
 {
   "name": "qtim",
-  "version": "2.15.1",
+  "version": "2.15.2",
   "description": "Codex-native team orchestration with bounded verification, knowledge-base refresh, project-specific agents, risk-based review, PM planning, and explicit cross-dialog missions.",
   "author": {
     "name": "Антон Фокин"

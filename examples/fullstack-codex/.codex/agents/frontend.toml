@@ -1,4 +1,4 @@
-# qtim-version: 2.15.1
+# qtim-version: 2.15.2
 name = "qtim-frontend"
 description = "Frontend implementation."
 model = "gpt-6-sol"

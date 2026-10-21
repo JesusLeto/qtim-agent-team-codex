@@ -53,7 +53,6 @@ nodes:
     edgeContract: evidence
     execution: lazy
     lazy:
-      leadProfile: {model: gpt-6-astra, reasoning: ultra}
       approvedIn: mission-preview
       rolePolicy: minimum-sufficient
       allowedRoles: [qtim-architect, qtim-testing]
@@ -100,7 +99,7 @@ content nodes; пустой или частичный список запрещ�
 
 ## Capability и git preflight
 
-1. Проверить main profile `gpt-6-astra` + `ultra`, если metadata видима.
+1. Coordinator использует выбранные пользователем model/reasoning текущей задачи.
 2. Однозначно разрешить App project и сохранить opaque `projectId`.
 3. Проверить точные schemas `create_thread`, `list_threads`, `wait_threads`,
    `read_thread`, rename и доступные follow-up/stop tools.
@@ -146,8 +145,9 @@ mission coordinator
 ```
 
 Coordinator владеет DAG/integration/final gate. Direct node использует
-`configured default` без model override. Lazy node lead получает Astra/Ultra только после exact
-approval в spec, вызывает `$qtim-team-lazy` в mission-child mode, выбирает
+`configured default` без model override. Lazy node lead получает model/thinking
+override только при явном выборе пользователя, зафиксированном в Approved spec;
+иначе использует configured default. Вызывает `$qtim-team-lazy` в mission-child mode, выбирает
 minimum-sufficient roles с concrete responsibilities и возвращает один receipt.
 Local agents работают waves по фактическому cap и не создают descendants. Настоящая
 feedback loop возвращается как `ESCALATION_REQUEST`.

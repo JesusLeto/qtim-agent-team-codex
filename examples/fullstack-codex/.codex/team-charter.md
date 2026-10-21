@@ -1,4 +1,4 @@
-<!-- qtim-version: 2.15.1 -->
+<!-- qtim-version: 2.15.2 -->
 # qtim team charter — fullstack golden
 
 ## Roles and model matrix
