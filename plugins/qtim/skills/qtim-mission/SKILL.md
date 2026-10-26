@@ -57,8 +57,8 @@ Implicit loading skill разрешено только для классифик
 
 ## Preconditions
 
-1. Проверь профиль main task, если runtime его показывает: требуется
-   `gpt-6-astra` + `ultra`. Плагин не переключает уже открытую задачу скрыто.
+1. Coordinator использует выбранные пользователем model/reasoning текущей задачи.
+   Плагин не переключает уже открытую задачу скрыто.
 2. Прочитай `AGENTS.md`, `.codex/team-charter.md`, `memory/MEMORY.md`, незавершённый
    `memory/missions/<slug>/mission.md` и указанный Approved artifact. Если charter
    отсутствует, предложи `$qtim-setup`.
@@ -101,9 +101,11 @@ Implicit loading skill разрешено только для классифик
    Edge-contract map обязан в точности покрывать все и только DAG edges;
    допустимы лишь `evidence | integrated`, missing/extra/unknown entries блокируют
    scheduler.
-5. Для `execution: lazy` spec обязан явно утвердить `gpt-6-astra` + `ultra`,
-   minimum-sufficient unique roles, concrete responsibilities, local write scopes и
-   `escalation: return-to-mission-coordinator`. Иначе `PREVIEW`.
+5. Для `execution: lazy` spec обязан явно утвердить minimum-sufficient unique
+   roles, concrete responsibilities, local write scopes и
+   `escalation: return-to-mission-coordinator`. Model/reasoning override требует
+   явного выбора пользователя; иначе используется configured default. Без
+   утверждённых roles/scopes/escalation — `PREVIEW`.
 6. Для git writer nodes:
    - зафиксируй base SHA, Approved integration branch, отдельный
      coordinator-owned integration worktree и отдельную state branch/worktree
@@ -187,7 +189,8 @@ Implicit loading skill разрешено только для классифик
 2. Запускай принятые runtime nodes waves без plugin hard cap. Один `wait_threads`
    call содержит не более восьми targets и использует сохранённые cursors.
 3. Direct peer task не получает `model`/`thinking`: используй configured default.
-   Только Approved lazy node получает exact `gpt-6-astra` + `ultra`.
+   Lazy node получает model/thinking override только при явном выборе
+   пользователя, зафиксированном в Approved spec; иначе configured default.
 4. Writer startup строго двухфазный. Initial prompt bounded и preflight-only:
    marker `qtim:<mission-id>:<node-id>`, attempt, base, target, запрет любых edits/
    commit и требование вернуть `WRITER PREFLIGHT READY` только после detached

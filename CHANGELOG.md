@@ -29,6 +29,15 @@
 - Local validators, preservation fixtures и review не заменяют реальную обкатку.
   Порядок запуска и возврата к stable: `docs/feature-spec-experiment.md`.
 
+## 2.15.2 — 2026-10-21
+
+### Исправлено
+
+- `$qtim-mission` использует выбранные пользователем model/reasoning текущей
+  задачи без обязательного `gpt-6-astra` + `ultra`. Для lazy nodes override
+  применяется только по явному выбору пользователя в Approved spec; иначе
+  используется configured default. Остальные mission gates сохранены.
+
 ## 2.15.1 — 2026-10-02
 
 Модельная матрица qtim переведена на точные профили GPT-6 в Codex App.
