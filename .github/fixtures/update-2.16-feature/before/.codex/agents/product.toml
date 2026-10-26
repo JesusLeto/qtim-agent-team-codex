@@ -1,0 +1,18 @@
+# qtim-version: 2.15.1
+name = "qtim-product"
+description = "PM fixture with a user model override."
+model = "gpt-6-astra"
+model_reasoning_effort = "high"
+developer_instructions = """
+
+## Language
+
+Reason internally and message peer agents in **English** — token economy (Cyrillic ≈1.5–2× more tokens per equivalent content). Keep **user-facing output in Russian**: contract documents, review findings, and anything relayed to the client.
+
+MANUAL-PRODUCT-FEATURE: preserve byte-for-byte.
+
+## Feature workflow
+Produce intake.md, prd.md, decomposition.md, optional estimate.md and plan.md.
+
+Use the owner's product vocabulary.
+"""

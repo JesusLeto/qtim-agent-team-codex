@@ -4,6 +4,88 @@
 
 Правило ведения: при каждом релизе, меняющем сгенерированное состояние, добавляй секцию сверху. Секции хранятся newest-first, но `$qtim-update` всегда применяет попавшие в диапазон шаги oldest -> newest (снизу вверх по файлу). Если релиз не меняет сгенерированное состояние, добавляй секцию с пометкой «миграция не требуется».
 
+## 2.16.0-experimental.1
+
+Экспериментальная ветка `experiment/qtim-feature-spec`; stable/main не обновляется.
+Новые фичи используют интервью -> одну `spec.md` с SPEC_REVIEW -> approval -> handoff.
+Схема артефакта и поведение задаются feature-pipeline и independent-review reference;
+ниже только generated-state migration. SemVer prerelease сохраняй целиком в stamps.
+
+Миграция с 2.15.1:
+
+1. Покажи scoped plan/diff и получи approval миграции. Сопоставь qtim ownership
+   по stamp, charter roster, filename/name и уникальным anchors. Foreign файлы,
+   ручной текст, соседний track и подтверждённые atomic model overrides сохраняются.
+   Уже полный target region — applied; неоднозначный или частичный — pending.
+2. PM-блок между `qtim:track:pm:start/end`: старый fingerprint — сводка full/fast,
+   `feature-brief.md`, PRD-only, decomposition/estimate checkpoints. Заменяй только
+   этот распознанный qtim-owned region новой self-contained сводкой из setup:
+   один main editor, `spec.md`, Revision / Reviewed revision / Approved revision /
+   Review verdict, accepted decision lock, одна таблица vertical WI, SPEC_REVIEW
+   до единственного approval, последний idempotent pointer в memory/decisions.md.
+   Main проверяет findings; reviewer advisory. Нормальный handoff требует matching
+   revisions, READY_FOR_APPROVAL и current human approval; owner waiver — только
+   явное исключение с exact revision/scope/reason/risk/evidence, не review PASS.
+3. Missing-role exception для PM-only: если PM marker/roster доказаны и reviewer
+   отсутствует и в roster, и на диске, добавь одну строку `qtim-reviewer` и один
+   `.codex/agents/reviewer.toml` из текущего template с project substitutions.
+   Это единственное разрешённое создание missing role в этой секции. До записи
+   проверь exact pair Astra+xhigh и collision; user-named reviewer, foreign файл,
+   переименованный target или неподтверждённая pair — pending, без дубля/overwrite.
+   Существующий reviewer мигрируется по следующему пункту, не пересоздаётся.
+   PM reviewer механически read-only и не означает dev readiness: нужны dev track
+   и required implementation roles для выбранного team workflow.
+4. Мигрируй только распознанные instructions regions следующих bundled ролей;
+   language, model/reasoning pair и ручные regions byte-for-byte сохраняются:
+   - product: старые `Твои режимы` INTAKE/PRD/DECOMPOSE/ESTIMATE/PLAN и `PRD format`
+     вместе с соседним decomposition/history contract -> SPECIFY/CONSULT/UX-AUDIT,
+     единый spec и existing vertical slicing/DRI/contributing/expand-contract;
+   - reviewer: старый единственный APPROVED/NOT APPROVED mode, `Run or verify gates`,
+     review checklist/recheck/report regions -> раздельные SPEC_REVIEW и CODE_REVIEW.
+     SPEC_REVIEW получает clean-context mechanical read-only, READY_FOR_APPROVAL /
+     CHANGES_REQUESTED и Reviewed revision, один full-pass + один fix-recheck;
+     exhausted blocker или UNAVAILABLE блокирует готовность, budget переживает resume.
+     CODE_REVIEW сохраняет первый phase pass + два fix-and-recheck раунда;
+     один proper independent pass может закрывать phase и risk gate, money-critical
+     две трассы остаются. Не запускай code gates и дополнительного reviewer в spec mode;
+   - architect: распознанные DESIGN mode/start rules -> CONSULT для Approved spec,
+     DESIGN только по grounded новой развилке; ADR filter и mandatory adversary
+     не сокращаются;
+   - frontend: `Before handoff` -> reuse подходящего type/build/self-check evidence;
+     browser self-check и tester acceptance сохраняют разные purposes;
+   - testing: dev-server/browser evidence rules -> active handle/result check,
+     gate input/environment scope, unique logs и own-resource cleanup.
+   Если в region есть ручные изменения, не заменяй его целиком: покажи delta;
+   без решения владельца шаг pending. Database и custom roles вне этих scopes
+   сохраняют инструкции; общий contract приходит из charter, не из copy шаблона.
+5. В общей working-rules части charter добавь короткий verification contract:
+   gate/AC/scope/command + relevant code/tests/config/lock/fixture inputs + environment
+   + result/log/limits; HEAD один недостаточен. PASS reuse только на подходящих
+   входах, новый stack/risk/env требует affected gate; stress/release checks остаются.
+   Process owner/handle/liveness/unique log/cleanup task-local, UNKNOWN не PASS.
+   Stable WI/batch budget не сбрасывается агентом/revision label; dedup scout scope.
+   Known unsupported model не повторяется до смены runtime/pair/account; transient
+   network/auth отдельно. Внешний user AGENTS built-in-reviewer-first не переопределяй.
+   В managed `AGENTS.md` внутри contract markers добавь только краткую ссылку на
+   эти project charter rules; внешние инструкции сохраняй.
+6. Code-review toggle влияет только на risk-based CODE_REVIEW. SPEC_REVIEW PM track
+   и ADR stress-test сохраняются при disabled. В charter и reviewer template
+   не удаляй их по глобальному fail-soft/code-risk правилу: spec gate fail-closed.
+7. Для existing optional PostToolUse замени только qtim-owned reminder text в
+   command/commandWindows на текущий project-hooks.json: сначала freshness/evidence,
+   затем missing/affected gates. Foreign entries/order/events byte-for-byte сохрани;
+   если optional reminder не выбран/не существует, новый hooks file не создавай.
+8. Durable `memory/` и legacy `docs/features/` не переписывай: никаких rename,
+   удаления, конверсии, сброса старых approvals/Done. Не создавай spec для старой
+   фичи автоматически. Mixed sources выбираются только с явным Canonical: spec.md.
+   `.gitignore`, screenshot policy, mission graph/runtime/integration не меняются.
+9. Проверь TOML/JSON, exact pairs/read-only reviewer, language/track markers,
+   PM reviewer при disabled code gate, self-contained generated paths, preservation
+   of manual/foreign/legacy content. Только после всех applicable applied/compatible
+   подними charter и все однозначные qtim role stamps до 2.16.0-experimental.1.
+   Любой pending оставляет все stamps на последней полностью завершённой версии.
+   После agent TOML — новая задача Codex; после reminder edit — /hooks review/trust.
+
 ## 2.15.2
 
 Миграция не требуется: исправлен выбор модели в `$qtim-mission`;

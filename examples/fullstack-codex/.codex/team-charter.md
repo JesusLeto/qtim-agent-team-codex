@@ -1,4 +1,4 @@
-<!-- qtim-version: 2.15.2 -->
+<!-- qtim-version: 2.16.0-experimental.1 -->
 # qtim team charter — fullstack golden
 
 ## Roles and model matrix
@@ -9,7 +9,7 @@
 | database | `qtim-database` | `$qtim-minimal-diff` before non-trivial implementation; `$qtim-debug-loop` for non-trivial bugs |
 | frontend | `qtim-frontend` | `$qtim-minimal-diff` before non-trivial implementation; `$qtim-debug-loop` for non-trivial bugs |
 | testing | `qtim-testing` | `$qtim-debug-loop` for flaky reproduction |
-| reviewer | `qtim-reviewer` | `$qtim-minimal-diff` excess is recommendation-only; protected-zone/invariant/gate violations block |
+| reviewer | `qtim-reviewer` | mandatory clean-context SPEC_REVIEW; `$qtim-minimal-diff` excess is recommendation-only; protected-zone/invariant/gate violations block |
 | product | `qtim-product` | evidence-grounded vertical slicing |
 
 Team-lead `gpt-6-astra` + `ultra`; architect/reviewer `gpt-6-astra` + `xhigh`;
@@ -40,6 +40,10 @@ out-of-scope finding идёт в отдельную задачу, обязате
 запроса, кроме явно выбранного phase-by-phase режима или новой развилки.
 Перед записью `memory/` или `docs/features/` вызови `$qtim-kb-format`; при
 обнаруженном дрейфе предложи `$qtim-kb-refresh`.
+Проверки имеют одного владельца и receipts в `.work/validation.md`: scope/AC,
+команда, входы/WIP/dependencies/config/окружение, результат, лог и ограничения.
+Перед повтором назови изменённые входы; сохрани process handles и cleanup.
+CI не заменяет browser/native evidence; одинаковый risk gate не требует второго reviewer.
 
 <!-- qtim:track:dev:start -->
 ## Dev track
@@ -54,21 +58,34 @@ configured in `.codex/screenshots-gate.json`.
 <!-- qtim:track:pm:start -->
 ## PM track
 
-Производная self-contained сводка канона `reference/feature-pipeline.md`: fast
-`feature-brief.md` или full PRD/decomposition/plan, vertical slices with DRI.
-После PRD возможен терминальный `PRD-only` без плана запуска; `estimate.md`
-нужен по запросу или когда выбираются исполнитель, срок или бюджет. XL item
-разрезается. После проверенного `Done` и свидетельства слияния `Archived`
-допустим по решению владельца без удаления долговечных PRD/plan/brief;
-временные материалы живут в `.work/` и очищаются отдельно по его решению.
-Каждый Approved plan/brief заканчивается блоком «Что запускать дальше»: recommendation,
+Производная self-contained сводка канона `reference/feature-pipeline.md`:
+интервью → одна `docs/features/<slug>/spec.md` с SPEC_REVIEW → approval → handoff.
+Main thread — единственный редактор; consult получает конкретный незакрытый вопрос.
+Одна WI-таблица содержит AC, DRI, contributing роли/слои, файлы, зависимости и
+стабильные review boundaries. Оценка optional по запросу; XL item разрезается.
+Revision / Reviewed revision / Approved revision фиксируют точный контракт.
+Принятые D-* меняет новый подтверждённый факт, не reviewer preference;
+семантическая правка возвращает Draft/pending, status и receipts ревизию не меняют.
+SPEC_REVIEW обязателен и при disabled code review: отдельный clean-context read-only
+reviewer, один полный проход и максимум один targeted fix-recheck с бюджетом через resume.
+Build/tests/browser до реализации не запускаются. READY_FOR_APPROVAL и текущие
+review/approval revisions нужны для handoff; открытый blocker или недоступная роль
+блокирует готовность. Явный owner waiver хранит revision/scope/reason/risk/evidence,
+не обозначается PASS и требует ручной проверки перед исполнением.
+Done требует acceptance/gates; Archived — merge evidence и решение владельца.
+Legacy PRD/plan/feature-brief.md читаются без автоматической конвертации/удаления;
+mixed sources требуют явного Canonical: spec.md. Временные материалы живут в `.work/`.
+Каждая spec заканчивается блоком «Что запускать дальше»: recommendation,
 why, topology, command, alternative. Direct/team-lazy/team-up/mission выбираются по
-execution topology, а не размеру; recommendation ничего не запускает без нового
-явного разрешения. Approved graph с готовыми base/integration target, scopes,
+execution topology, а не размеру; recommendation ничего не запускает. Одновременное
+approval и явное исполнение показанной команды не требуют второго запроса.
+Dev track и нужные writers проверяются отдельно от наличия PM reviewer.
+Approved graph с готовыми base/integration target, scopes,
 budgets и gates получает `запусти`; unresolved writer/lazy/runtime choice —
 `preview`, а один связный feedback loop — team-up fallback.
-Stage 6 сначала пишет handoff artifacts, затем строку в `memory/decisions.md` записывает
-последним completion marker. Approved artifact без marker означает interrupted handoff и resume Stage 6.
+Handoff сначала готовится в spec; одну строку в `memory/decisions.md` обнови
+последним completion marker. Approved spec без pointer — interrupted handoff:
+resume передачи сохраняет решения, review и approval.
 <!-- qtim:track:pm:end -->
 
 ## Memory layout

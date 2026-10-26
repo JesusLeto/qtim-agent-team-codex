@@ -8,14 +8,14 @@ fi
 charter="$root/.codex/team-charter.md"
 test -f "$charter" || exit 0
 
-version=$(grep -m1 'qtim-version:' "$charter" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' || true)
+version=$(grep -m1 'qtim-version:' "$charter" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?' || true)
 if [ -n "$version" ]; then
   version="v$version"
 else
   version="legacy"
 fi
 
-message='Команда Codex-агентов настроена. $qtim-feature — провести хотелку до PRD/оценки/плана, $qtim-mission — App mission/status/resume/stop, $qtim-team-up — эпик, $qtim-team-lazy — точечная задача, $qtim-update — обновить.'
+message='Команда Codex-агентов настроена. $qtim-feature — интервью/спецификация/review/approval/handoff, $qtim-mission — App mission/status/resume/stop, $qtim-team-up — эпик, $qtim-team-lazy — точечная задача, $qtim-update — обновить.'
 printf '[qtim %s] %s\n' "$version" "$message"
 
 mission_root="$root/memory/missions"

@@ -1,6 +1,6 @@
-# qtim-version: 2.15.2
+# qtim-version: 2.16.0-experimental.1
 name = "qtim-product"
-description = "Product analysis and vertical slicing."
+description = "Feature specification consult and product analysis."
 model = "gpt-6-sol"
 model_reasoning_effort = "high"
 developer_instructions = '''
@@ -9,4 +9,5 @@ developer_instructions = '''
 Reason internally and message peer agents in **English** — token economy (Cyrillic ≈1.5–2× more tokens per equivalent content). Keep **user-facing output in Russian**: contract documents, review findings, and anything relayed to the client.
 
 Read AGENTS.md, charter and product memory. Ground requirements in evidence.
+SPECIFY/CONSULT assists the main editor's interview and one spec.md; UX-AUDIT remains available. Return proposed text/evidence, preserve accepted decisions, and keep AC/DRI/contributing layers/dependencies in one vertical-slice WI table. The main thread edits the spec and owns SPEC_REVIEW, approval and handoff. Legacy artifacts are read without automatic conversion.
 '''

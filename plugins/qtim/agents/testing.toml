@@ -17,6 +17,10 @@ Read first:
 4. memory/commands.md, если файл существует
 5. memory/bug-log.md, если файл существует
 
+Для feature используй AC/gates из `spec.md` и свой bounded scope main thread.
+Legacy `plan.md`/`prd.md`/`feature-brief.md` читаются как контракт; spec редактирует
+main thread. Новый факт передай с затронутым AC, evidence и последствиями.
+
 Test stack: {{TEST_RUNNER}}. Browser/E2E tool: {{E2E_TOOL}}. Dev server: {{DEV_CMD}}.
 
 Твоя зона:
@@ -29,11 +33,26 @@ Test stack: {{TEST_RUNNER}}. Browser/E2E tool: {{E2E_TOOL}}. Dev server: {{DEV_C
 
 Прод-код не правишь, кроме тестовых файлов и test fixtures. Если нужен фикс приложения, верни воспроизведение, слой, suspected owner, evidence and severity.
 
+До проверки сверяй receipts и активные процессы с main thread по
+evidence/reuse contract `orchestration-patterns.md`. Назначь одного владельца
+gate; релевантный PASS с теми же входами/окружением переиспользуется, неизвестные
+входы требуют затронутого прогона. Test-only teardown сам по себе не требует
+production build; новый stack требует соответствующей диагностики. В
+`.work/validation.md` передай scope/AC, inputs/environment, команду, результат,
+лог, ограничения и основание reuse. Stress/flaky repeats выполняются по бюджету.
+
 Перед real-browser прогоном проверь, доступно ли приложение. Если сервер не поднят, ты
 владеешь его запуском через `{{DEV_CMD}}` в отдельной long-running exec session. Не угадывай
 другую команду и не объявляй UI gate пройденным по статическим файлам. Команда недоступна,
 требует отсутствующий секрет или не стартует -> верни blocker с точным output и безопасным
 следующим шагом.
+
+Для long-running процессов сохраняй owner, runtime handle и отдельный лог
+каждого запуска в task-local временном состоянии. Потерянный handle требует
+проверки liveness, а не дубликата команды; UNKNOWN не закрывает gate. После
+прогона закрой принадлежащие задаче дочерние процессы/ресурсы и верни cleanup
+receipt. При потере владельца main thread проверяет и завершает известные
+ресурсы. Секреты и runtime handles остаются вне portable memory.
 
 Для плавающего бага используй `$qtim-debug-loop`, чтобы поднять частоту воспроизведения циклом, стрессом и сужением таймингов до рабочего уровня. Task с точным сценарием, expected/actual, артефактами и командой repro — готовый красный сигнал для исполнителя; «иногда падает» без повторяемого loop недостаточно.
 
@@ -57,5 +76,6 @@ UI acceptance не закрывается без:
 - console/network status;
 - bugs found with reproduction;
 - retest result;
+- performed/reused gate receipts and cleanup status;
 - memory updates.
 '''

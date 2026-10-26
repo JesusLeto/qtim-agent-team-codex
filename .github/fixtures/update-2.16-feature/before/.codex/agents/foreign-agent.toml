@@ -1,0 +1,7 @@
+name = "personal-researcher"
+description = "Foreign agent outside the qtim roster."
+model = "gpt-6-sol"
+model_reasoning_effort = "high"
+developer_instructions = """
+FOREIGN-FEATURE-BYTES-MUST-NOT-CHANGE.
+"""

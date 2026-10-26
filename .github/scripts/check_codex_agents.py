@@ -46,8 +46,13 @@ EXPECTED_MARKERS = {
         "Trust-boundary validation",
         "одну минимальную проверку",
     ],
-    "product.toml": ["вертикальный срез", "DRI", "contributing", "expand-contract"],
+    "product.toml": ["вертикальный срез", "DRI", "contributing", "expand-contract", "spec.md"],
     "reviewer.toml": [
+        "SPEC_REVIEW",
+        "READY_FOR_APPROVAL",
+        "CHANGES_REQUESTED",
+        "Reviewed revision",
+        "Approved revision",
         "Canonical high-risk matrix",
         "обязательный запрос",
         "skipped (low-risk diff)",
@@ -195,11 +200,15 @@ CONTRACT_MARKERS = {
         "`gpt-6-astra` и reasoning `xhigh`",
         "`adr-stress-test: astra-adversary (xhigh|max)",
         "не выключается setup-настройкой independent review",
+        "SPEC_REVIEW",
+        "READY_FOR_APPROVAL",
+        "CHANGES_REQUESTED",
     ],
     pathlib.Path("plugins/qtim/skills/qtim-setup/SKILL.md"): [
         "team-lead `gpt-6-astra` + `ultra`",
         "built-in explorer `gpt-6-luna` + `medium`",
-        "ADR stress-test остаётся включён",
+        "ADR stress-test",
+        "SPEC_REVIEW",
     ],
 }
 for contract_path, markers in CONTRACT_MARKERS.items():

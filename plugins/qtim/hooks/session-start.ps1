@@ -11,10 +11,10 @@ while (-not (Test-Path -LiteralPath (Join-Path $root ".git"))) {
 }
 $charter = Join-Path $root ".codex/team-charter.md"
 if (-not (Test-Path -LiteralPath $charter -PathType Leaf)) { exit 0 }
-$match = Select-String -LiteralPath $charter -Pattern "qtim-version:\s*([0-9]+\.[0-9]+\.[0-9]+)" |
+$match = Select-String -LiteralPath $charter -Pattern "qtim-version:\s*([0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?)" |
   Select-Object -First 1
 $version = if ($match) { "v" + $match.Matches[0].Groups[1].Value } else { "legacy" }
-$message = 'Команда Codex-агентов настроена. $qtim-feature — провести хотелку до PRD/оценки/плана, $qtim-mission — App mission/status/resume/stop, $qtim-team-up — эпик, $qtim-team-lazy — точечная задача, $qtim-update — обновить.'
+$message = 'Команда Codex-агентов настроена. $qtim-feature — интервью/спецификация/review/approval/handoff, $qtim-mission — App mission/status/resume/stop, $qtim-team-up — эпик, $qtim-team-lazy — точечная задача, $qtim-update — обновить.'
 Write-Output ("[qtim {0}] {1}" -f $version, $message)
 
 $missionRoot = Join-Path $root "memory/missions"

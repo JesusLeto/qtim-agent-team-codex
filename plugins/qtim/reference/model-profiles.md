@@ -38,4 +38,13 @@
 - При миграции прежний qtim-default заменяй только по fingerprint конкретной upgrade section; отличающаяся pair или сохранённое inheritance считаются пользовательским override до показанного diff и подтверждения.
 - Профиль роли не определяет execution depth, число агентов или обязательность review.
 
+Подтверждённую ошибку unsupported model/pair запоминай в task-local состоянии
+текущего runtime. Повторяй попытку после изменения catalog/config/account или
+runtime; auth/network сбой этого вывода не даёт. Используй уже разрешённый
+совместимый fallback с теми же role/read-only/clean-context условиями; новый
+override требует явного выбора. Обязательное независимое review без доступного
+reviewer остаётся непроверенным. Пользовательское AGENTS правило «сначала built-in
+reviewer» имеет приоритет: qtim его не отменяет и не переписывает автоматически;
+если оно требует заведомо неработающий повтор, покажи конфликт пользователю.
+
 Актуальные model slugs и возможности сверяй с официальными страницами [Models](https://learn.chatgpt.com/docs/models) и [Subagents](https://learn.chatgpt.com/docs/agent-configuration/subagents), а доступность — с локальным runtime catalog.

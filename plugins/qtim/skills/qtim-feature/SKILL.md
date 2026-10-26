@@ -1,204 +1,102 @@
 ---
 name: qtim-feature
-description: "Use when a PM or analyst wants to turn a raw feature idea into versioned artifacts under docs/features: select a risk-proportional fast-path brief or the full intake-to-PRD-to-plan pipeline, optionally finish at an approved PRD, and recommend an execution route only when an implementation plan exists."
+description: "Turn a raw feature idea into one revisioned specification through a decision interview, mandatory independent specification review, user approval, and implementation handoff; resume an existing feature without reopening settled decisions."
 ---
 
-# qtim Feature Pipeline
+# qtim Feature
 
-Веди хотелку от идеи до утверждённого handoff. Этот вызов явно разрешает нужный read-only fan-out: `qtim-product`, `qtim-architect`, владельцы затронутых dev-слоёв и built-in `explorer`.
+Интервью → одна спецификация с независимым ревью → утверждение → handoff.
+Этот вызов разрешает bounded read-only consult и обязательный reviewer, но не
+production code, SQL, тесты или запуск реализации.
 
-Production code не пиши. Артефакты содержат требования, evidence, контракты, инварианты и gates, а не будущие диффы.
+Канон документа, ревизий, принятого scope и legacy adapter —
+`../../reference/feature-pipeline.md`; бюджет и независимость review —
+`../../reference/independent-review.md`. Main thread — единственный редактор spec.
 
-Этот skill владеет **сессионной оркестрацией**: порядком стадий, checkpoints, resume,
-выбором трека и selective fan-out. Долговечный канон артефактов, статусов, handoff,
-grounded-оценки и vertical slicing живёт в `../../reference/feature-pipeline.md`.
-Сгенерированный PM-блок charter — производная self-contained сводка этого reference,
-а не третий независимый канон.
+## Preconditions и resume
 
-## Preconditions
+1. Прочитай `.codex/team-charter.md` и PM marker `<!-- qtim:track:pm:start -->`.
+   Если их нет, предложи `$qtim-setup` до planning.
+2. Прочитай feature-pipeline, intake-protocol и model-profiles в `../../reference/`.
+   Main lead — `gpt-6-astra` + `ultra`; другой явно показанный профиль не меняй
+   скрыто, останови fan-out и попроси новый task на Astra/Ultra.
+3. Определи kebab-case slug. Если каталог существует, прочитай действующий источник,
+   решения, review budget и указатель. Используй resume/legacy adapter reference;
+   отсутствие указателя при актуальном Approved spec означает завершение handoff,
+   а не новое интервью. Legacy `feature-brief.md`/`prd.md` не конвертируй автоматически.
+4. До записи `docs/features/` или `memory/` прочитай `$qtim-kb-format`.
+   Consult/raw review/логи — в `.work/`; контракт — один `spec.md`.
 
-1. Прочитай `.codex/team-charter.md`. Если файла или PM track marker `<!-- qtim:track:pm:start -->` нет, остановись и предложи `$qtim-setup`.
-2. Прочитай `../../reference/feature-pipeline.md` и `../../reference/intake-protocol.md`.
-3. Прочитай `../../reference/model-profiles.md`. qtim team-lead должен работать на `gpt-6-astra` + `ultra`; не переключай уже открытый task скрыто. Если runtime exposes другой профиль, остановись до fan-out и попроси открыть новый task на Astra/Ultra. `Ultra` не расширяет scope и не отменяет checkpoints.
-4. Определи kebab-case slug.
-5. Если `docs/features/<slug>/` существует, прочитай статусы и «Историю изменений». `feature-brief.md` означает fast-path, `prd.md`/полный набор — полный трек. `Archived` завершён; `Done` сначала проверь по gates. Approved PRD-only с указателем — завершённое планирование до новой просьбы продолжить. Иначе продолжи с первого незавершённого обязательного артефакта, не начинай заново. У Stage 6 своего артефакта нет: её completion marker — строка-указатель на slug в `memory/decisions.md`. Approved план, brief или PRD-only без указателя -> resume со Stage 6.
-6. Перед первой записью в `docs/features/` или `memory/` прочитай `$qtim-kb-format`; передай его правила каждому пишущему агенту. Уже существующие артефакты меняй на месте и сжимай их историю, не дописывай копии.
+Роли и fallbacks запускай по model-profiles: сохраняй явные пары и пользовательские
+overrides, учитывай уже подтверждённую недоступность runtime. Prompts/follow-ups
+агентам — English, spec и общение с пользователем — Russian.
 
-Если custom agent не стартует именно из-за model pair, не удаляй пару и не заменяй её inheritance молча. Отличающийся override сохрани; продолжи через `worker` с inline role instructions только на явно подтверждённой доступной pair. Built-in `explorer` используй на `gpt-6-luna` + `medium`; не угадывай slug и не считай auth/network ошибку несовместимостью модели.
+## 1. Интервью
 
-Все prompts и follow-ups для consult/subagent ролей пиши на English. Артефакты `docs/features/**`, checkpoints и всё, что передаётся пользователю, пиши на Russian по обязательному project language contract.
+Прочитай существующую product memory, если она создана. Отсутствие product onboard
+не блокирует planning. Последовательно выясни проблему и пользователя, поведение,
+приёмку, ограничения и non-goals. Задавай **один вопрос за раз**, с рекомендуемым
+ответом и коротким основанием; следующий вопрос учитывает предыдущий ответ.
+Факты из кода, memory, git и доступных документов добывай сам.
 
-## Artifacts
+Точечный consult нужен лишь для названного неизвестного факта: один вопрос,
+граница чтения и ожидаемый evidence. Независимые вопросы должны иметь disjoint
+scope; role ownership реализации не требует обязательного planning fan-out.
+Product по умолчанию не запускается. Child agents не делегируют дальше.
 
-Общий файл — `intake.md`. Полный трек добавляет `prd.md`, `decomposition.md`, `plan.md` и условный `estimate.md`; fast-path — один `feature-brief.md` вместо них. PRD-only завершает планирование после утверждённого `prd.md`. Шапка, статусы Draft -> Approved -> In Development -> Done -> Archived и «История изменений» с потолком в пять коротких записей — по feature-pipeline reference. `memory/decisions.md` хранит только указатель на утверждённую фичу.
+Сохраняй ответы и `D-*` в Draft `spec.md`. Заверши интервью после разрешения
+вопросов, влияющих на scope, поведение, контракты и AC. Не создавай промежуточный
+intake approval. Новый противоречащий факт возвращает только затронутое решение.
 
-## Stage 1: Intake And Track
+## 2. Спецификация и независимое ревью
 
-Сначала прочитай продуктовую память, если создана: `memory/product-map.md`, `product-actors.md`, `product-glossary.md`, `product-metrics.md`. Если её нет в существующей кодовой базе, предложи `$qtim-product-onboard`, но не блокируй работу.
+Собери spec по reference: AC, подтверждённые решения, одна WI-таблица с ownership,
+файлами, порядком, зависимостями и review boundaries, gates, риски и rollback.
+Небольшая фича получает короткий документ, большая — больше проверяемых срезов;
+отдельных full/fast процессов и артефактов нет. Оценку добавляй лишь по реальному
+запросу/решению, без отдельного checkpoint.
 
-Проведи итеративное интервью порциями по 1-3 решения. Факты из кода, `memory/`, git и документации добывай сам. Сначала выясни проблему, пользователя и желаемый результат; затем критерии успеха, ограничения, совместимость и non-goals. Остановись, когда ответы перестали менять понимание.
+Заранее заполни handoff и Execution Recommendation Gate по topology reference,
+включая нужный dev track/writers. Reviewer в PM roster сам по себе не dev-ready.
+Если возник настоящий ADR, сохрани обязательный clean-context ADR adversary до
+approval; обычная спецификация не создаёт ADR или дополнительный review лишь
+из-за размера/ярлыка риска.
 
-Запиши `intake.md`. На checkpoint покажи:
+Main thread запускает существующего `qtim-reviewer` в `SPEC_REVIEW` по
+independent-review: механически read-only, чистый контекст (`fork_turns = "none"`),
+минимальный source pack без авторской истории. Передай текущую ревизию, raw
+требования/ответы владельца, spec, инварианты и проверяемые источники.
+Reviewer возвращает `READY_FOR_APPROVAL` либо `CHANGES_REQUESTED` с evidence и
+затронутыми `AC-*`/`D-*`/`WI-*`; build/tests/browser в planning не запускает.
 
-- сводку понимания;
-- предварительный размер и число фаз с evidence;
-- результат Fork Test из intake protocol;
-- рекомендуемый трек.
+Проверь findings по источникам. Подтверждённые blockers исправь; предпочтения и
+неподтверждённые claims отклони с причиной. Сохрани краткий исходный verdict,
+dispositions, Reviewed revision и бюджет в spec. Разрешены один полный проход и
+максимум один fix/targeted-recheck, с неизменным бюджетом при resume/revision labels.
+Непреодолённый blocker либо необходимость нового полного прохода сверх бюджета
+→ `Blocked` и конкретное owner decision. Недоступное обязательное review не
+подменяй self-review: поддерживаемый независимый fallback или явный recorded
+owner waiver по reference. Пропуск не обозначай PASS.
 
-Предлагай **fast-path** только для S/M, одной фазы и без Fork Test triggers. Иначе — полный трек. Пользователь подтверждает понимание и может переопределить трек; зафиксируй выбор и переведи intake в Approved.
+## 3. Утверждение
 
-## Fast-path: Feature Brief
+Покажи спецификацию, результат независимого review и готовую рекомендацию запуска.
+Попроси **одно** approval конкретной ревизии, только после закрытия подтверждённых
+блокеров. Зафиксируй `Approved revision` и Status по reference.
+Существенная правка после review/approval возвращает затронутый контракт в Draft;
+новый номер ревизии не даёт новый review budget автоматически.
 
-Собери `feature-brief.md` сам. Обязательного веера ролей нет: evidence найди чтением и точечным `explorer`; уже активную профильную роль используй только по реально затронутому слою. DRI и contributing роли/слои здесь задают ownership реализации, а не обязательный planning fan-out. Единый размер S/M обоснуй кодовым evidence; если уже консультировал профильную роль, учти её оценку как signal. Не можешь обосновать contributing layer или видишь правдоподобный L/XL — переходи на полный трек.
+## 4. Handoff
 
-Brief включает:
+При актуальном review/approval сообщи сохранённую команду и её границы. Последним
+файловым изменением идемпотентно обнови одну строку-указатель в `memory/decisions.md`.
+Не перепроектируй spec и не запускай проверки реализации после approval.
 
-- проблему, желаемый результат, сценарии с acceptance criteria и non-goals;
-- work items с DRI, contributing ролями/слоями и привязкой к файлам;
-- размер S/M с evidence-обоснованием;
-- одну проверяемую фазу: gates, rollback/обратимость, Done;
-- `## Handoff` для `$qtim-team-lazy`.
+Recommendation — только `RECOMMEND`. Явное «утверждаю и запускай показанную команду»
+разрешает выбранное исполнение без ещё одного стартового вопроса. Mission требует
+своего Approved preview; feature handoff его не заменяет. Проверки исполнения
+переиспользуются по orchestration-patterns, сохраняя реальные AC/gates и актуальность.
 
-**Единственный checkpoint вместо стадий 2-5:** пользователь утверждает brief целиком; Status -> Approved.
-
-Если при сборке возникла развилка, L/XL или больше одной фазы, разверни полный трек: сохрани intake, переименуй незавершённый brief в `prd.md`, перестрой его как Draft PRD, запиши причину перехода в историю и продолжи со стадии PRD. Не поддерживай одновременно два конкурирующих плановых документа.
-
-После approval переходи к Handoff.
-
-## Full Track Stage 2: PRD
-
-Spawn `qtim-product` (fallback: `worker` с PM-инструкциями из charter) с read-first на charter PM track и `intake.md`.
-
-`prd.md` содержит цели, non-goals, сценарии и acceptance criteria, UX-заметки, метрики, риски, open questions. Метрики связывай с реальными событиями из `memory/product-metrics.md`; отсутствующее событие — задача на tracking, не факт. **Checkpoint:** пользователь утверждает PRD и выбирает «продолжить к плану» либо «завершить на PRD». Если выбрано второе, добавь `## Handoff` с `Результат: PRD-only` и открытыми решениями, Status -> Approved, затем выполни только PRD-only ветку Stage 6. Возобновляй стадии 3-5 лишь по новой просьбе пользователя.
-
-## Full Track Stage 3: Grounded Decomposition
-
-Состав consult пропорционален задетым слоям:
-
-1. Spawn read-only `qtim-architect` для слоёв/data flow/инвариантов и только нужные `qtim-database`, `qtim-frontend`, `qtim-testing`; узкая фича обычно требует architect + одного владельца слоя. `explorer` — broad search. Уважай runtime cap и запускай batches; child agents не делегируют дальше.
-2. `qtim-product` агрегирует `decomposition.md`: `id | вертикальный work item | DRI | contributing роли/слои | зависимости | grounding (файлы)`. DRI владеет главной acceptance boundary; неоднозначный ownership разрешает architect.
-
-Каждый work item — проверяемый вертикальный срез через затронутые слои. Очевидный XL item разрежь даже при пропуске оценки. Для широкого механического rename/retype используй expand-contract. Checkpoint для decomposition общий со Stage 4, если оценка нужна; иначе пользователь утверждает work items без отдельного раунда оценки.
-
-## Full Track Stage 4: Grounded Estimation, When Needed
-
-По умолчанию пропусти Stage 4 и `estimate.md`. Выполни её, если оценка нужна
-для выбора исполнителя, срока/бюджета или явно запрошена. Передача тому же
-владельцу в новую задачу Codex сама по себе не требует оценки. Decomposition
-и разрезание XL остаются обязательными в обоих случаях.
-
-Каждая contributing роль даёт S/M/L/XL + confidence + риски для своего layer slice с evidence (файлы, покрытие, интеграционные точки, reference class из git или `memory/decisions.md`). DRI возвращает один итоговый размер vertical item с явным синтезом integration/coordination risk; не складывай размеры механически. Без evidence оценка не принимается; XL любого slice или item означает вернуться к decomposition и разрезать item.
-
-Если Stage 4 нужен, `qtim-product` сводит `estimate.md`. **Checkpoint:**
-пользователь утверждает work items; при выполненной оценке одним решением
-утверждает и её, оба созданных артефакта -> Approved. Если Stage 4 пропущен,
-Approved получает только `decomposition.md`. При изменении состава пересчитай
-оценки затронутых items, только если `estimate.md` существует.
-
-## Full Track Stage 5: Plan
-
-`qtim-product` + `qtim-architect` собирают `plan.md`:
-
-- проверяемые вертикальные фазы с work items;
-- disjoint write scopes, которые можно параллелить;
-- typecheck/build/tests/browser gates;
-- rollout, rollback и обратимость;
-- критерий Done.
-
-Сначала ставь решения с высокой неопределённостью (данные, API-контракты, UX-развилки), механическую доводку — позже. Широкий рефактор планируй expand-contract.
-
-Если architect создал ADR, **до** финального checkpoint main thread запускает новый read-only thread без истории на `gpt-6-astra` + `xhigh`; при сочетании «необратимо + затронут документированный инвариант» — `max`. Findings возвращаются architect для проверки, а ADR получает строку `adr-stress-test:`. Исправления и повторные проходы ограничены `../../reference/independent-review.md`; optional code-review gate этот шаг не отключает.
-
-**Checkpoint:** финальное approval; Status -> Approved.
-
-## Stage 6: Handoff
-
-Для `PRD-only` сохрани `## Handoff` и сообщи пользователю, что продуктовый
-контракт готов. Затем последним файловым изменением добавь или обнови одну
-строку-указатель на `prd.md` в `memory/decisions.md`. Команду реализации и блок
-`Что запускать дальше` пока не создавай: сначала нужна новая просьба
-продолжить планирование.
-
-Для утверждённого плана или brief выполни шаги ниже:
-Его approval закрывает design gate для реализации и всех предусмотренных фаз.
-После отдельного разрешения запуска исполнение не требует вопроса перед каждой
-фазой, кроме новой существенной развилки или выбранного phase-by-phase режима.
-
-1. Для полного трека сначала заверши `plan.md` базовым implementation contract:
-
-```text
-PRD и acceptance criteria: docs/features/<slug>/prd.md.
-Обнови Status артефактов: In Development при старте, Done после gates.
-После проверки Done и свидетельства слияния предложи архивацию владельцу по feature-pipeline reference.
-Отклонения и новые edge cases фиксируй в «Истории изменений» plan.md.
-```
-
-2. Для fast-path заверши brief:
-
-```text
-Scope, acceptance criteria и gates находятся в этом документе.
-При старте переведи Status в In Development, после всех gates — в Done.
-После проверки Done и свидетельства слияния предложи архивацию владельцу по feature-pipeline reference.
-Отклонения и новые edge cases фиксируй там же.
-```
-
-3. Проведи обязательный **Execution Recommendation Gate**. Выбирай форму по
-   topology, а не по размеру:
-   - один bounded outcome без fan-out -> direct;
-   - один outcome, нужны несколько точечных ролей, feedback loop не ожидается ->
-     `$qtim-team-lazy`;
-   - один связный outcome и implement -> test -> fix -> review loop ->
-     `$qtim-team-up`;
-   - два и более самостоятельных outcomes, разные контексты/worktrees или
-     dependency producer -> consumer -> `$qtim-mission`.
-   Размер `S/M/L/XL` влияет на декомпозицию и стоимость, но не переопределяет
-   topology. XL с одним feedback loop остаётся team-up; M producer -> consumer
-   может требовать mission.
-4. Добавь в плановый документ блок `## Что запускать дальше`:
-
-```text
-Рекомендация: $qtim-mission
-Почему: <самостоятельные outcomes / dependency / context isolation / feedback loop>
-Топология: <A -> B -> verification или один связный loop>
-Команда: $qtim-mission, <запусти|preview> Approved feature docs/features/<slug>/.
-Альтернатива: $qtim-team-up для одного связного outcome с feedback loop.
-```
-
-   Для direct, team-lazy и team-up сохрани те же пять полей; команда должна быть
-   готова к копированию. Recommendation — режим `RECOMMEND`: он не разрешает
-   `spawn_agent`, `create_thread` или реализацию. Для Approved graph с готовыми
-   base/integration target, write scopes, budgets и gates допустима команда
-   `запусти`; unresolved writer/lazy/runtime choice получает `preview`.
-5. Если charter содержит только PM track и нет `qtim-reviewer`, предупреди: перед
-   реализацией нужно повторно вызвать `$qtim-setup` и добавить dev track, иначе
-   team-up/mission останутся без обязательного verification gate.
-6. Если реализацию запускает другой человек, попроси его использовать готовую
-   команду в новой задаче Codex. Выполнение displayed команды — явный вызов
-   выбранного workflow. Короткое «Запускай предложенное» после feature
-   recommendation выбирает workflow, но для `$qtim-mission` сначала открывает
-   `PREVIEW`: этот пятистрочный handoff не является полным Approved mission
-   preview. Peer tasks появляются только после explicit mission-команды либо
-   approval на непосредственно предшествующий полный preview; завершение feature
-   само ничего не запускает.
-7. **Последним шагом** добавь одну строку-указатель в `memory/decisions.md`. Это
-   atomic completion marker Stage 6: записывай его только после того, как handoff
-   и блок «Что запускать дальше» сохранены и сообщены пользователю.
-
-## Anti-Patterns
-
-- Full track на простой S/M-хотелке без развилок или fast-path при Fork Test trigger.
-- Отдельные approvals decomposition и estimate.
-- Fan-out всех ролей независимо от затронутых слоёв.
-- Горизонтальные work items «вся БД / весь UI» вместо вертикальных срезов.
-- Production code, SQL, тесты или будущие диффы в артефактах.
-- Перезапуск существующего slug с нуля.
-- Плановый документ `Approved`, но указателя в `memory/decisions.md` нет: Stage 6 оборвана и должна быть продолжена.
-- Указатель записан до готового handoff: ложный completion marker ломает resume.
-- Выбор workflow только по S/M/L/XL или числу файлов вместо outcomes, dependencies,
-  context/worktree isolation и feedback loops.
-- Автоматический запуск рекомендованного `$qtim-team-up`/`$qtim-mission` без нового
-  явного разрешения пользователя.
-- Выдуманные часы вместо относительной оценки с evidence.
-- Обязательная стадия estimate без решения, которому нужна оценка.
-- Продолжение к плану после выбранного результата `PRD-only` без новой просьбы.
-- Пропуск checkpoint «потому что очевидно».
+Planning завершён после актуального указателя; реализация начинается только в
+разрешённом execution workflow. Новый неподтверждённый scope, отсутствие reviewer
+или чужое мнение не превращай в незаметное расширение утверждённой фичи.

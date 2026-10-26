@@ -32,12 +32,20 @@ Codex main thread остаётся team-lead. qtim subagent workflow автор�
    либо получает один bounded mission-child `$qtim-team-lazy`; node-local team-up
    и третий уровень запрещены. Recommendation ничего не запускает.
 4. Decide whether design approval is required.
-5. For non-trivial work, run `$qtim-brainstorm` and produce a design brief. Create a separate ADR only when the ADR filter is satisfied; otherwise record the decision as one registry line.
+5. Для новой feature используй интервью и единую спецификацию `$qtim-feature`.
+   Approved spec закрывает design gate: начинай с CONSULT для конкретного
+   неизвестного факта, не создавай повторный design brief/brainstorm. Для другого
+   нетривиального scope или новой подтверждённой развилки проведи `$qtim-brainstorm`
+   и зафиксируй решение. ADR создаётся только при выполненном ADR filter.
 6. Если создан ADR, до user approval проведи обязательный clean-context stress-test: main thread поднимает read-only `gpt-6-astra` + `xhigh` adversary без истории; для необратимого решения, затрагивающего документированный инвариант, — `max`. Architect верифицирует findings и фиксирует `adr-stress-test:` в ADR. Эта проверка не зависит от optional risk-based code review.
 7. Проверь доменную предпосылку, от которой зависит весь план: подтверди её
    кодом, данными или владельцем до approval. Техническая проверка не заменяет
    ответ владельца на невыводимое из репозитория бизнес-правило.
-8. Get approval for irreversible, ambiguous, product-visible, public API, security, money, or data migration decisions. Approved plan авторизует все его фазы; новый стартовый запрос перед каждой фазой не нужен, кроме явно выбранного пользователем phase-by-phase режима.
+8. Для feature сначала заверши mandatory SPEC_REVIEW по `independent-review.md`,
+   затем получи одно approval конкретной ревизии spec. Для других задач согласуй
+   irreversible, ambiguous, product-visible, public API, security, money или data
+   migration решения. Approved plan авторизует все его фазы; новый стартовый
+   запрос перед каждой фазой не нужен, кроме выбранного phase-by-phase режима.
 9. Execute with selected roles.
 10. Verify with affected tests/browser and the bounded review contract in `independent-review.md`.
 11. Record durable decisions and findings in `memory/` по `$qtim-kb-format`; approved decisions and features get a short pointer in the `memory/decisions.md` registry. Если evidence устарело, предложи `$qtim-kb-refresh`, не дописывай поверх сомнительного факта.
@@ -74,7 +82,12 @@ Do not disguise missing research as a clarifying question. When evidence conflic
 
 ## Design Brief
 
-For non-trivial work, use `$qtim-brainstorm` to separate interpretations, evidence, viable options, open questions and labeled assumptions before selecting a design. Use `$qtim-grill` to stress-test a consequential plan; use `$qtim-prototype` when a UX or behavioral fork is cheaper to resolve with a concrete disposable example than with prose.
+Новая feature ведётся по feature-pipeline; её spec включает нужные решения,
+инварианты и gates без параллельной копии design brief. При Approved spec
+переоткрывай только решение, которому противоречит новый подтверждённый факт,
+показывая affected ID и последствие. Для остальных нетривиальных задач используй
+`$qtim-brainstorm`; `$qtim-grill` и `$qtim-prototype` применяй к реальной
+неразрешённой развилке, а не как обязательный повтор уже завершённого интервью.
 
 Найди одну-две предпосылки, ошибочность которых заставит переделать весь план
 (например, кто владеет сущностью и какой доступ разрешён). Сверь их с кодом и

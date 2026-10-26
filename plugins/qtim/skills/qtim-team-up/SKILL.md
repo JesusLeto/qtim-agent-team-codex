@@ -13,6 +13,8 @@ Use Codex subagent threads and custom agents. Do not assume a hidden persistent 
 
 1. Read `.codex/team-charter.md`.
 2. If it does not exist, stop and ask the user to run `$qtim-setup`.
+   Для реализации feature проверь dev-track и нужных исполнителей;
+   один PM reviewer не означает dev-ready.
 3. Read only the needed shared references:
    - `../../reference/intake-protocol.md`;
    - `../../reference/orchestration-patterns.md`;
@@ -20,12 +22,20 @@ Use Codex subagent threads and custom agents. Do not assume a hidden persistent 
    - `../../reference/model-profiles.md`.
    Проверь профиль main task, если runtime exposes metadata: qtim team-lead должен работать на `gpt-6-astra` + `ultra`. Если профиль другой, остановись до fan-out и попроси пользователя открыть новую задачу с Astra/Ultra; qtim не переключает текущий task скрыто.
 4. Проверь `memory/epic-state.md` (его пишет `$qtim-team-down` при незавершённом эпике): если файл есть и эпик не закрыт — после подъёма команды покажи резюме и предложи продолжить с зафиксированного места, восстановив задачи из «В полёте» в видимом плане с их ролями.
-5. Если задача ссылается на фичу из `docs/features/<slug>/`, прочитай `plan.md` + `prd.md` полного трека или единый `feature-brief.md` fast-path как источник scope и acceptance criteria. До работы переведи плановый документ и связанные артефакты в `In Development`; только после gates — в `Done`. Отклонения с обоснованием и новые edge cases фиксируй в «Истории изменений» выбранного планового документа.
+5. Для `docs/features/<slug>/` сначала прочитай `spec.md` и
+   `../../reference/feature-pipeline.md`: проверь текущие Reviewed revision,
+   Approved revision и готовность handoff; незакрытый spec gate возвращает к
+   `$qtim-feature` до реализации. Main thread — единственный редактор
+   spec; до работы он ставит `In Development`, после обязательных gates — `Done`.
+   Существенная дельта требует revision contract, остальные результаты идут в
+   `.work/validation.md`. При отсутствии spec читай legacy `plan.md` + `prd.md`
+   или `feature-brief.md` как контракт без автоматических правок/конвертации.
+   Прогресс legacy-фичи сохраняй в `.work/validation.md`.
 
-Approved план вместе с явными ограничениями пользователя — граница реализации.
-Выполняй утверждённые фазы подряд; новый checkpoint нужен только для новой
+Approved spec/legacy-контракт вместе с явными ограничениями пользователя — граница реализации.
+При явном запуске выполняй утверждённые work items подряд; новый checkpoint нужен только для новой
 продуктовой развилки, необратимого действия вне approval, изменения scope или
-исчерпанного бюджета доработок. Старт следующей фазы уже разрешён планом.
+исчерпанного бюджета доработок. Старт следующего work item уже разрешён запуском.
 
 ## Decision Matrix
 
@@ -53,7 +63,9 @@ Spawn only currently needed roles in parallel when the subagent tool is availabl
 
 Use custom agent types from `.codex/agents/*.toml` when Codex exposes them. If the current task has not loaded custom agents yet, either ask the user to start a new Codex task or use `worker` / `explorer` fallback with the role instructions embedded in the prompt.
 
-Если spawn custom agent падает именно из-за model pair, не останавливай эпик и не стирай override вслепую. Сравни пару с template и локальным catalog. Для неизменённого qtim-default сообщи пользователю и продолжи через `worker` с inline role instructions на доступной подтверждённой pair только после явного выбора; системную починку отправь в `$qtim-update`. Любую отличающуюся/непроверенную pair сохрани. Не угадывай slug и не подменяй точный профиль наследованием main task. Транзиентную auth/network ошибку не классифицируй как недоступную модель.
+При ошибке model pair используй политику fallback и task-local сведения о
+недоступности из `model-profiles.md`; сохрани override и отправь системную
+починку в `$qtim-update`. Уже разрешённый совместимый fallback используй повторно.
 
 ## Model And Reasoning Policy
 
@@ -89,6 +101,9 @@ Read first:
 Mission: <role mission from charter>.
 Do not touch: <do-not-touch from charter>.
 Skills/practices: <skills and mandatory practices from charter>.
+Feature contract: <spec path, WI and accepted decisions; legacy path when applicable>.
+Verification: <assigned gates/owner, existing receipts and evidence/reuse reference path>.
+Review budget: <stable WI/batch id and completed passes/remaining rounds>.
 
 Reason internally and communicate with peer agents in English. Write user-facing artifacts and anything intended for the user in Russian.
 Return concise artifacts, changed files if any, verification performed, blockers, and memory updates needed.
@@ -98,13 +113,30 @@ For implementation agents, remind them that other agents may edit in parallel an
 
 ## Coordination Flow
 
-1. Run design first for non-trivial work: architect produces brief/ADR and open questions.
+1. Для Approved spec используй принятые решения и ограниченный CONSULT
+   architect при необходимости. DESIGN нужен для конкретной новой развилки с
+   evidence; для задачи без утверждённого контракта следуй `intake-protocol.md`.
 2. Если architect создал ADR, **до** user approval main thread запускает отдельного read-only adversary без истории (`fork_turns = "none"` или runtime-эквивалент) на `gpt-6-astra` + `xhigh`; необратимое решение, затрагивающее документированный инвариант, -> `max`. Передай только ADR, инварианты и проверяемые paths. Верни findings architect для верификации и не продолжай к approval, пока в ADR нет `adr-stress-test:` со счётчиком или честным `skipped — <reason>`. Optional independent code review не выключает этот шаг.
 3. Ask for user approval before irreversible or ambiguous work not covered by the Approved plan, following `intake-protocol.md`.
 4. Parallelize only disjoint work scopes; `Ultra` не отменяет этот gate и не является причиной увеличить fan-out.
 5. Route implementation by ownership.
-6. Tester verifies with real browser for UI changes.
-7. Reviewer делает первый проход на каждой фазе и выполняет её gates. Подтверждённые блокеры проходят не больше двух fix-and-recheck раундов по `independent-review.md`: targeted check и затронутые тесты; полный reviewer повторяется только при изменении зоны риска. Остался блокер — `Blocked` с результатами попыток и решением, которое нужно от владельца. Находки вне Approved scope оформляй отдельной задачей; если они блокируют acceptance/security gate, сообщи конфликт как `Blocked`, не расширяя scope молча. При активной секции independent review в charter классифицируй фактический diff по canonical high-risk matrix: security/auth/tenant-scope visibility; money/billing/account state; documented domain invariants/public contracts; data-transform/destructive migrations; critical browser flows; high-risk performance/reliability; другое доказанно hard-to-rollback изменение. Любое совпадение требует отдельного read-only review thread; low-risk diff допускает зафиксированный `skipped (low-risk diff)`. Секции нет или она помечена «выключен» -> не требуй **code-review** gate; ADR stress-test из шага 2 остаётся обязательным.
+6. Назначь владельцев gates и проверь receipts/активные процессы по
+   `orchestration-patterns.md`. Общие проверки выполняй после завершения
+   соответствующих writers. Tester закрывает реальное browser acceptance для UI
+   актуальным evidence; self-check frontend остаётся отдельным покрытием.
+7. Для предусмотренного code-review gate reviewer делает первый проход на
+   стабильную границу WI/пакета и проверяет
+   актуальность receipts; отсутствующие или устаревшие gates выполняет их
+   назначенный владелец. Подтверждённые блокеры проходят не больше двух
+   fix-and-recheck раундов по `independent-review.md`; resume, смена агента и
+   lazy → team-up сохраняют уже выполненные passes и бюджет. Остался блокер —
+   `Blocked` с evidence и решением владельца. Находки вне Approved scope передай
+   как отдельные задачи; конфликт с acceptance/security gate — `Blocked`.
+   При активном code review в charter применяй canonical high-risk matrix из
+   `independent-review.md`: текущий независимый reviewer закрывает тот же scope,
+   отдельная трасса нужна только по фактическому риску/контракту. Low-risk diff
+   допускает `skipped (low-risk diff)`. Выключенный code review не выключает
+   обязательные SPEC_REVIEW и ADR stress-test.
 8. Main agent integrates and checks all results. Subagent output is input, not authority.
 9. Commit durable decisions to `memory/`.
 
@@ -120,7 +152,8 @@ Final report should be result-first:
 - gates run and status;
 - findings fixed or left open;
 - memory files updated;
-- если работа шла по фиче из `docs/features/<slug>/` — отмеченные пункты `plan.md` или `feature-brief.md`, обновлённый Status (`In Development` / `Done`) и зафиксированные в «Истории изменений» отклонения;
+- для feature — выполненные WI и Status `spec.md`, существенные дельты и
+  `.work/validation.md`; для legacy — прогресс в `.work/` без правок контракта;
 - если в preconditions найден незавершённый epic-state — его резюме и предложение продолжить;
 - active agent threads closed or still running.
 
