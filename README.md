@@ -62,11 +62,12 @@ overwrite и auto-archive запрещены.
 
 Каждый ADR получает два прохода: `$qtim-grill` и независимого read-only Astra-оппонента в новом thread без истории. Результат остаётся в самом ADR строкой `adr-stress-test: astra-adversary (xhigh|max) — N findings, M учтено`; этот design gate работает даже когда optional risk-based review кода выключен.
 
-## Экспериментальная ветка
+## Стабильная версия
 
-Эта версия `2.16.0-experimental.1` предназначена для обкатки в
-`experiment/qtim-feature-spec`, до слияния в stable/main. Установленный плагин
-не меняется от переключения Git-ветки. См. [запуск эксперимента](docs/feature-spec-experiment.md).
+`2.16.0` — стабильная версия с одной спецификацией и обязательным независимым
+SPEC_REVIEW. Она устанавливается из `main`; смена Git-ветки сама по себе не
+обновляет установленный плагин. История обкатки — в
+[архивном руководстве эксперимента](docs/feature-spec-experiment.md).
 
 ## Установка
 

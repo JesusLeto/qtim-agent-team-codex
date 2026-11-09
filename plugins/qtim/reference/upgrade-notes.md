@@ -4,9 +4,19 @@
 
 Правило ведения: при каждом релизе, меняющем сгенерированное состояние, добавляй секцию сверху. Секции хранятся newest-first, но `$qtim-update` всегда применяет попавшие в диапазон шаги oldest -> newest (снизу вверх по файлу). Если релиз не меняет сгенерированное состояние, добавляй секцию с пометкой «миграция не требуется».
 
+## 2.16.0
+
+Миграция не требуется: стабильный релиз сохраняет generated-state contract
+`2.16.0-experimental.1`. Обнови только charter stamp и stamps всех однозначно
+сопоставленных qtim role TOML до `2.16.0`; foreign файлы не меняй.
+Если исходная версия старше prerelease, сначала выполни все применимые секции
+oldest -> newest, включая `2.16.0-experimental.1` ниже. Pending шаг не обходи
+стабильным stamp. После изменения agent TOML нужна новая задача Codex.
+
 ## 2.16.0-experimental.1
 
-Экспериментальная ветка `experiment/qtim-feature-spec`; stable/main не обновляется.
+Историческая prerelease-секция для `experiment/qtim-feature-spec`; её contract
+включён в стабильную `2.16.0` без поведенческих изменений.
 Новые фичи используют интервью -> одну `spec.md` с SPEC_REVIEW -> approval -> handoff.
 Схема артефакта и поведение задаются feature-pipeline и independent-review reference;
 ниже только generated-state migration. SemVer prerelease сохраняй целиком в stamps.

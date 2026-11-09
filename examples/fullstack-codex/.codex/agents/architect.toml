@@ -1,4 +1,4 @@
-# qtim-version: 2.16.0-experimental.1
+# qtim-version: 2.16.0
 name = "qtim-architect"
 description = "Architecture decisions and invariants."
 model = "gpt-6-astra"

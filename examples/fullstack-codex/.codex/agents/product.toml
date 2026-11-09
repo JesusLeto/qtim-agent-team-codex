@@ -1,4 +1,4 @@
-# qtim-version: 2.16.0-experimental.1
+# qtim-version: 2.16.0
 name = "qtim-product"
 description = "Feature specification consult and product analysis."
 model = "gpt-6-sol"
