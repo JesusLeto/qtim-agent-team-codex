@@ -1,0 +1,4 @@
+interface:
+  display_name: "qtim Team Up"
+  short_description: "Полная команда для эпика с проверками и ревью"
+  default_prompt: "Используй $qtim-team-up, чтобы поднять полную команду qtim для этого эпика."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "qtim Update"
+  short_description: "Обновление команды под установленную версию qtim"
+  default_prompt: "Используй $qtim-update, чтобы проверить версии qtim и подготовить обновление команды проекта."

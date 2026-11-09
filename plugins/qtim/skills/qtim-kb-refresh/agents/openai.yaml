@@ -1,0 +1,4 @@
+interface:
+  display_name: "qtim KB Refresh"
+  short_description: "Проверка и обновление знаний проекта по коду"
+  default_prompt: "Используй $qtim-kb-refresh, чтобы проверить и обновить знания проекта по выбранной Git-базе."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "qtim Product Onboard"
+  short_description: "Карта продукта, акторы, словарь и аналитика"
+  default_prompt: "Используй $qtim-product-onboard, чтобы наполнить продуктовую память проекта."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "qtim Team Lazy"
+  short_description: "Команда по требованию для ограниченной задачи"
+  default_prompt: "Используй $qtim-team-lazy, чтобы подключить нужные роли qtim для этой задачи."
