@@ -1,0 +1,4 @@
+interface:
+  display_name: "qtim Team Down"
+  short_description: "Завершение команды с сохранением состояния"
+  default_prompt: "Используй $qtim-team-down, чтобы завершить работу команды qtim и сохранить состояние."

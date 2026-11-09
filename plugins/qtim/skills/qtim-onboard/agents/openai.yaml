@@ -1,0 +1,4 @@
+interface:
+  display_name: "qtim Onboard"
+  short_description: "Инженерная память по существующей кодовой базе"
+  default_prompt: "Используй $qtim-onboard, чтобы наполнить инженерную память по кодовой базе проекта."

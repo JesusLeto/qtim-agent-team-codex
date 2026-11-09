@@ -1,0 +1,4 @@
+interface:
+  display_name: "qtim Doctor"
+  short_description: "Диагностика команды, миссий и состояния qtim"
+  default_prompt: "Используй $qtim-doctor, чтобы проверить состояние qtim и найти причины неполадок."

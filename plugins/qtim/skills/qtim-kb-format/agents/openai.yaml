@@ -1,0 +1,4 @@
+interface:
+  display_name: "qtim KB Format"
+  short_description: "Формат проектной памяти и артефактов фич"
+  default_prompt: "Используй $qtim-kb-format, чтобы оформить проектную память и артефакты фич по канону qtim."

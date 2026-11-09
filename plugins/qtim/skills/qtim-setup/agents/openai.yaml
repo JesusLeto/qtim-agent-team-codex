@@ -1,0 +1,4 @@
+interface:
+  display_name: "qtim Setup"
+  short_description: "Настройка команды qtim под текущий проект"
+  default_prompt: "Используй $qtim-setup, чтобы настроить команду qtim для этого проекта."

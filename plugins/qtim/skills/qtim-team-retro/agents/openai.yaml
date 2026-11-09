@@ -1,0 +1,4 @@
+interface:
+  display_name: "qtim Team Retro"
+  short_description: "Проверенные уроки эпика в проектную память"
+  default_prompt: "Используй $qtim-team-retro, чтобы сохранить проверенные уроки этого эпика в память проекта."

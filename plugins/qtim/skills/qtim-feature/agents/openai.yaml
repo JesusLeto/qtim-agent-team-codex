@@ -1,0 +1,4 @@
+interface:
+  display_name: "qtim Feature"
+  short_description: "От идеи до спецификации с независимым ревью"
+  default_prompt: "Используй $qtim-feature, чтобы подготовить спецификацию этой фичи с независимым ревью."
