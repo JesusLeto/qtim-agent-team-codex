@@ -1,7 +1,7 @@
 {
   "name": "qtim",
-  "version": "2.16.0-experimental.1",
-  "description": "Experimental qtim feature planning with one specification, independent review and bounded verification; explicit Codex teams and missions.",
+  "version": "2.16.0",
+  "description": "qtim feature planning with one specification, independent review and bounded verification; explicit Codex teams and missions.",
   "author": {
     "name": "Антон Фокин"
   },
@@ -23,8 +23,8 @@
   "skills": "./skills/",
   "interface": {
     "displayName": "qtim",
-    "shortDescription": "Experimental single-spec qtim feature workflow",
-    "longDescription": "Experimental qtim feature planning: interview, one specification, mandatory independent read-only review, user approval and explicit handoff. Accepted decisions and valid verification receipts survive resume. Existing Codex dev teams, knowledge refresh and explicit cross-dialog missions keep their scope and integration contracts.",
+    "shortDescription": "Single-spec qtim feature workflow",
+    "longDescription": "qtim feature planning: interview, one specification, mandatory independent read-only review, user approval and explicit handoff. Accepted decisions and valid verification receipts survive resume. Existing Codex dev teams, knowledge refresh and explicit cross-dialog missions keep their scope and integration contracts.",
     "developerName": "Антон Фокин",
     "category": "Developer Tools",
     "capabilities": [
