@@ -7,6 +7,26 @@ description: "Use when the user explicitly asks for qtim lazy mode in Codex: spa
 
 Invocation of this skill is explicit permission to spawn only the Codex subagents needed for the current task.
 
+## Feature-ticket mode
+
+Exact coordinator dispatch ограничивает local main текущим ticket/attempt и
+назначенными roles/write scopes. До свежего bounded write-go — только read-only
+preflight physical worktree/base/dirty/revisions/root/marker. Модель, depth и
+review следуют существующим канонам ниже; дополнительная роль или feedback loop
+возвращаются исходному feature coordinator, без локального team-up/нового peer.
+
+Проверь local outputs и завершение writers/resources, затем верни proposed
+receipt в разрешенном `.work/Txx/`: собственные AC/evidence, actual diff/result
+identity, handles/cleanup и release observation. Spec/ADR/contracts, очередь,
+ledger, Accepted/Done всей фичи и запуск next принадлежат исходному coordinator
+по `../../reference/feature-execution.md`. Scope/product changes — запрос ему;
+сообщение другого чата не заменяет human authorization.
+
+Independent review текущего ticket/WI запускает только исходный coordinator после
+durable reservation по тому же reference. Local main передает checked candidate/
+quiescence и ожидает его review/fix decision. Ticket independent reviewer исключен
+из generic local roster/spawn/fix steps; mandatory review сохраняется у coordinator.
+
 ## Mission-child mode
 
 Peer node lead может вызвать skill только когда Approved `$qtim-mission` prompt
@@ -55,7 +75,7 @@ Use direct work for trivial tasks. В standalone lazy mode escalте to
    `$qtim-feature` до реализации (mission-child возвращает `ESCALATION_REQUEST`
    coordinator). Approved решения — условия работы;
    конкретное новое evidence открывает только затронутую развилку. Main thread
-   единолично обновляет Status `In Development`/`Done`; существенная дельта
+   в standalone mode единолично обновляет Status `In Development`/`Done`; существенная дельта
    следует revision contract, receipts идут в `.work/validation.md`.
    Без spec читай legacy `plan.md` + `prd.md` или `feature-brief.md` как контракт
    без автоматических правок/конвертации; прогресс сохраняй в `.work/validation.md`.
@@ -64,8 +84,12 @@ Use direct work for trivial tasks. В standalone lazy mode escalте to
    approval, изменения scope или исчерпанного бюджета. В mission-child mode
    статусы feature и portable mission state пишет coordinator: node lead
    возвращает предлагаемый transition и существенную дельту в receipt.
+   Feature-ticket main также возвращает только proposed receipt текущего ticket;
+   он не запускает соседние WI и не расширяет пакет всей историей фичи.
 3. Classify the task and choose only the needed role(s).
 4. Spawn the needed custom agents when available; otherwise use `worker` fallback with inline role instructions. Built-in `explorer` запускай явно на `gpt-6-luna` + `medium`.
+   В feature-ticket mode это только прочие явно разрешенные роли;
+   ticket/WI independent reviewer запускает исходный coordinator.
 5. Give each subagent a concrete scope and expected output in an English prompt;
    передай spec/legacy path, WI/принятые решения, assigned gates, receipts,
    evidence/reuse reference и оставшийся review budget. All follow-ups between
@@ -76,6 +100,9 @@ Use direct work for trivial tasks. В standalone lazy mode escalте to
    `orchestration-patterns.md`; общие проверки — после соответствующих writers.
    В mission-child mode не пиши portable mission state и integration branch:
    верни один receipt coordinator.
+   В feature-ticket mode передай checked candidate/quiescence и ожидай review/fix
+   decision исходного coordinator; local reviewer/fix-cycle не запускай.
+   Исправления требуют его свежего bounded write-go.
 
 Если review возвращает `NOT APPROVED`, сначала проверь замечания по Approved
 scope и коду. Внеплановые находки передай владельцу как отдельные задачи;
@@ -103,6 +130,8 @@ prerequisite — Astra+Ultra. Используй exact pair из role TOML и fa
 - more roles become necessary than originally expected;
 - an irreversible or ambiguous product decision appears.
 
+В feature-ticket mode эти условия возвращаются feature coordinator для решения
+в пределах текущего ticket; local main не эскалирует workflow самостоятельно.
 В mission-child mode все эти условия возвращаются coordinator как
 `ESCALATION_REQUEST`; node lead не запускает `$qtim-team-up` и не расширяет
 Approved allowlist. Do not restart already useful agent threads. Continue them

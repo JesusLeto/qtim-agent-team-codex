@@ -1,9 +1,13 @@
 #!/usr/bin/env python3
 """Validate migration preservation fixtures; these do not execute Codex updates."""
 import json
+import os
 import pathlib
 import re
+import shutil
+import subprocess
 import sys
+import tempfile
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 FIXTURE = ROOT / ".github/fixtures/update-2.13-extended"
@@ -29,6 +33,15 @@ NEW_PRODUCT_WORKFLOW = (
     "Help the main editor interview and produce spec.md; preserve approved decisions "
     "and request SPEC_REVIEW before owner approval."
 )
+
+STAGES_FIXTURE = ROOT / ".github/fixtures/update-2.17-stages"
+STAGES_OLD_WORKFLOW = 'Feature workflow: interview -> spec.md + SPEC_REVIEW -> approval -> handoff.'
+STAGES_NEW_WORKFLOW = 'Feature workflow: interview -> spec.md + SPEC_REVIEW -> approval -> Stage/WI/Ticket handoff.\nStable S*/WI-*/Txx link tickets/Txx-<slug>.md with AC/DRI/contributing/technical prerequisites and stage/final gates; one stage/ticket is valid.\nExecution via $qtim-feature has one original coordinator and one chat per ticket; worker returns proposal. Approval alone starts nothing; owner acceptance and advance are explicit.\nDurable receipts/Txx-aN.md differ from .work/Txx/ raw/proposals; cleanup preserves contracts/receipts/runtime. Legacy/spec-only need an explicit owner adapter.'
+STAGES_OLD_PRODUCT = 'Help the main editor interview and produce spec.md; preserve approved decisions and request SPEC_REVIEW before owner approval.'
+STAGES_NEW_PRODUCT = 'Help the main editor with one Stage/WI/Ticket spec: stable S*/WI-*/Txx, tickets/Txx-<slug>.md, AC/DRI/contributing/technical prerequisites, stage/final gates; one stage/ticket is valid. The original $qtim-feature coordinator owns contracts/queue/acceptance; return proposed text/evidence. Approval starts nothing. Durable receipts/Txx-aN.md differ from .work/Txx/ proposals. Legacy/spec-only keep their source until an explicit owner adapter.'
+STAGES_OLD_AGENTS = 'Новые feature используют одну spec.md с независимым SPEC_REVIEW до approval/handoff;\nрежим ревью кода его не выключает. Правила ревизий и receipts — в charter.'
+STAGES_NEW_AGENTS = 'Новые feature используют spec.md с этапами и `tickets/Txx-<slug>.md`; SPEC_REVIEW\nпредшествует approval. Исполнение — через `$qtim-feature`: один coordinator,\nотдельный чат на тикет; worker возвращает proposal. Approval само не запускает работу.\nПравила ревизий, gates и durable receipts — в charter.'
+
 BAD = []
 CUSTOM_BLOCK = (
     "\nПеред нетривиальной реализацией пройди `$qtim-minimal-diff`. "
@@ -332,6 +345,139 @@ need(
     "experimental fixture deleted existing files or added unrelated state",
 )
 
+
+# Snapshots prove only allowed-region preservation, not execution of an LLM update.
+def stages_preserved(before, after, replacements):
+    if "qtim-version:" in before and after.count("qtim-version: 2.17.0") != 1:
+        return False
+    normalized = after.replace("qtim-version: 2.17.0", "qtim-version: 2.16.1", 1)
+    for old, new in replacements:
+        if normalized.count(new) != 1:
+            return False
+        normalized = normalized.replace(new, old, 1)
+    return normalized == before
+
+
+stages_replacements = {
+    "AGENTS.md": [(STAGES_OLD_AGENTS, STAGES_NEW_AGENTS)],
+    ".codex/team-charter.md": [
+        (STAGES_OLD_WORKFLOW, STAGES_NEW_WORKFLOW),
+        ("Approved plan авторизует следующие фазы.",
+         "Approved plan авторизует следующие standalone-фазы; feature-sequential advance принадлежит исходному coordinator через $qtim-feature."),
+    ],
+    ".codex/agents/product.toml": [(STAGES_OLD_PRODUCT, STAGES_NEW_PRODUCT)],
+}
+for relative, replacements in stages_replacements.items():
+    before = text(STAGES_FIXTURE / "before" / relative)
+    after = text(STAGES_FIXTURE / "after" / relative)
+    need(stages_preserved(before, after, replacements), f"2.17 changed outside allowed regions: {relative}")
+    if "--self-test" in sys.argv[1:]:
+        # Each mutation must violate a distinct preservation boundary.
+        for old, new in (
+            ("preserve byte-for-byte.", "silently changed."),
+            ('model = "gpt-6-astra"', 'model = "gpt-6-sol"'),
+            ("MANUAL-DEV-STAGES", "DELETED-DEV-STAGES"),
+            ("SPEC_REVIEW remains mandatory", "SPEC_REVIEW is disabled"),
+            ("qtim-version: 2.17.0", "qtim-version: 2.16.1"),
+            ("qtim-version: 2.17.0", "qtim-version: 2.18.0"),
+        ):
+            if old in after:
+                need(not stages_preserved(before, after.replace(old, new, 1), replacements),
+                     f"2.17 negative oracle missed {old}: {relative}")
+need(
+    set(tree_snapshot(STAGES_FIXTURE / "before")) == set(tree_snapshot(STAGES_FIXTURE / "after"))
+    == set(stages_replacements), "2.17 snapshots added/deleted unrelated files",
+)
+
+
+def check_stage_scanner():
+    scanner = ROOT / "plugins/qtim/skills/qtim-kb-refresh/scripts/kb_scan.py"
+    with tempfile.TemporaryDirectory(prefix="qtim-stages-scan-") as temp:
+        repo = pathlib.Path(temp) / "repo"
+        repo.mkdir()
+        env = {**os.environ, "GIT_OPTIONAL_LOCKS": "0", "PYTHONDONTWRITEBYTECODE": "1"}
+        def command(argv):
+            return subprocess.run(argv, cwd=repo, env=env, check=True, text=True,
+                                  stdout=subprocess.PIPE, stderr=subprocess.PIPE).stdout
+        command(["git", "init", "-q"])
+        command(["git", "-c", "user.name=qtim fixture", "-c", "user.email=fixture@example.invalid",
+                 "-c", "commit.gpgsign=false", "commit", "-q", "--allow-empty", "-m", "fixture base"])
+        def write(relative, body):
+            path = repo / relative
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(body, encoding="utf-8")
+        def cli(*args):
+            return json.loads(command([sys.executable, str(scanner), *args]))
+        spec = ("# Feature: fixture\nStatus: Approved\nRevision: 1\n"
+                "Reviewed revision: 1\nApproved revision: 1\nReview verdict: READY_FOR_APPROVAL\n")
+        root = "docs/features/staged/"
+        receipt = root + "receipts/T01-a1.md"
+        write(root + "spec.md", spec)
+        write("docs/features/spec-only/spec.md", spec)
+        write("docs/features/legacy/prd.md", "Status: Approved\n")
+        write("docs/features/legacy/plan.md", "Status: Done\n")
+        write(root + "adr.md", "Status: Accepted\n")
+        write(root + "tickets/T01-slice.md", "Status: Done\nOwner acceptance: none\n")
+        write(receipt, "Durable owner acceptance of the tested T01 scope remains recorded with result identity, actual evidence, independent review and its limitations. Future required integration gates stay open.\n")
+        write(root + ".work/plan.md", "Status: Done\nDisposable raw evidence.\n")
+        write(root + "execution.json", "opaque unknown runtime format; inventory must not validate or resume it")
+        write(root + "execution.lock", "opaque runtime lock")
+        result = cli("scan", "--base", "HEAD")
+        features = result["features"]
+        need(features["status_counts"] == {"Approved": 3, "Done": 1},
+             "scanner changed spec-once/legacy-per-artifact counts or counted ticket/receipt/runtime")
+        need(features["done_artifacts"] == ["docs/features/legacy/plan.md"],
+             "scanner treated ticket presence/status as feature Done")
+        need(features["issues"] == [], "valid legacy/spec-only/staged sources were rejected")
+        if "artifacts" not in features:
+            need(False, "scanner missing additive spec/ADR/tickets/receipts/runtime inventory")
+            return
+        expected = {
+            "spec": ["docs/features/spec-only/spec.md", root + "spec.md"],
+            "adr": [root + "adr.md"],
+            "legacy": ["docs/features/legacy/plan.md", "docs/features/legacy/prd.md"],
+            "tickets": [root + "tickets/T01-slice.md"],
+            "receipts": [receipt],
+            "runtime": [root + "execution.json", root + "execution.lock"],
+        }
+        need(features["artifacts"] == expected, "scanner artifact kinds/paths differ from contract")
+        snap = cli("snapshot", "--run", "stages", "--base", "HEAD",
+                   "--snapshots-dir", str(pathlib.Path(temp) / "snapshots"))
+        before = pathlib.Path(snap["before"])
+        for relative in (receipt, root + ".work/plan.md", root + "execution.json", root + "execution.lock"):
+            need((before / relative).read_bytes() == (repo / relative).read_bytes(),
+                 f"snapshot dropped hidden/durable/runtime input: {relative}")
+        shutil.rmtree(repo / root / ".work")
+        loss = cli("lost", "--snapshot", snap["path"])
+        need(loss["files_removed"] == [] and loss["candidates"] == [] and not loss["shrink_alarm"],
+             "raw .work cleanup changed durable Markdown knowledge")
+        need(cli("scan", "--base", "HEAD")["features"]["artifacts"]["receipts"] == [receipt],
+             "raw cleanup lost durable acceptance inventory")
+        write(root + "execution.json", "different opaque runtime")
+        need(cli("lost", "--snapshot", snap["path"])["candidates"] == [],
+             "runtime JSON entered Markdown loss validation")
+        (repo / receipt).unlink()
+        loss = cli("lost", "--snapshot", snap["path"])
+        need(receipt in loss["files_removed"] and any(c["file"] == receipt for c in loss["candidates"])
+             and any(c["file"] == receipt for c in loss["shrunk_files"]),
+             "durable receipt deletion escaped existing loss/shrink checks")
+        write(root + "spec.md", spec.replace("Approved revision: 1", "Approved revision: 2"))
+        need(cli("scan", "--base", "HEAD")["features"]["issues"] == [
+            {"file": root + "spec.md", "code": "feature_spec_revision_mismatch"}],
+            "additive inventory weakened spec revision validation")
+        write(root + "spec.md", spec)
+        write(root + "prd.md", "Status: Done\n")
+        need(cli("scan", "--base", "HEAD")["features"]["issues"] == [
+            {"file": root + "spec.md", "code": "feature_canonical_ambiguous"}],
+            "additive inventory weakened mixed-source ambiguity validation")
+        write(root + "spec.md", "Canonical: spec.md\n" + spec)
+        need(cli("scan", "--base", "HEAD")["features"]["status_counts"] == {"Approved": 3, "Done": 1},
+             "explicit Canonical spec did not retain single-spec counting")
+        print("OK: real scanner CLI preserves legacy/spec-only counts, revisions, ambiguity, snapshots and durable receipt loss; artifact inventory is observational")
+
+
+check_stage_scanner()
+
 contract_markers = {
     ROOT / "plugins/qtim/skills/qtim-update/SKILL.md": (
         "qtim-generated custom role без bundled template",
@@ -498,4 +644,4 @@ if BAD:
 if "--self-test" in sys.argv[1:]:
     print("OK: update-fixture negative oracles reject manual loss, foreign mutation, model-override loss, disabled spec review, partial language, and ambiguous stamp drift")
 else:
-    print("OK: 2.13/2.14 and experimental feature fixtures preserve non-target, legacy and foreign bytes (documented snapshots; no live migration executed)")
+    print("OK: 2.13/2.14, experimental feature and 2.17 stage fixtures preserve non-target, legacy and foreign bytes (documented snapshots; no live migration executed)")

@@ -47,6 +47,9 @@ jobs:
           python3 .github/scripts/check_skill_refs.py
           python3 .github/scripts/check_skill_refs.py --self-test
 
+      - name: Feature state guard CLI и filesystem self-check
+        run: python3 .github/scripts/check_feature_state.py
+
       - name: Mission contracts и semantic fixtures валидны
         run: python3 .github/scripts/check_missions.py
 

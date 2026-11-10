@@ -1,4 +1,4 @@
-<!-- qtim-version: 2.16.1 -->
+<!-- qtim-version: 2.17.0 -->
 # qtim team charter — fullstack golden
 
 ## Roles and model matrix
@@ -36,7 +36,8 @@ APPROVED/NOT APPROVED.
 or auto-archives mission tasks.
 Явные ограничения пользователя и Approved scope старше рекомендаций review;
 out-of-scope finding идёт в отдельную задачу, обязательный blocker возвращается
-владельцу. Approved plan авторизует следующие фазы без повторного стартового
+владельцу. В feature-sequential текущий ticket и advance принадлежат исходному
+coordinator через `$qtim-feature`. Approved plan авторизует следующие standalone-фазы без повторного стартового
 запроса, кроме явно выбранного phase-by-phase режима или новой развилки.
 Перед записью `memory/` или `docs/features/` вызови `$qtim-kb-format`; при
 обнаруженном дрейфе предложи `$qtim-kb-refresh`.
@@ -58,11 +59,13 @@ configured in `.codex/screenshots-gate.json`.
 <!-- qtim:track:pm:start -->
 ## PM track
 
-Производная self-contained сводка канона `reference/feature-pipeline.md`:
+Производная self-contained сводка канона установленного `$qtim-feature`:
 интервью → одна `docs/features/<slug>/spec.md` с SPEC_REVIEW → approval → handoff.
 Main thread — единственный редактор; consult получает конкретный незакрытый вопрос.
-Одна WI-таблица содержит AC, DRI, contributing роли/слои, файлы, зависимости и
-стабильные review boundaries. Оценка optional по запросу; XL item разрезается.
+Одна Stage/WI/Ticket-таблица содержит стабильные S*/WI-*/Txx, ссылки на
+`tickets/Txx-<slug>.md`, AC, DRI, contributing роли/слои, файлы, технические
+prerequisites и стабильные review boundaries. Одна стадия/один тикет допустимы;
+stage/final gates сохраняют покрытие AC. Оценка optional по запросу; XL item разрезается.
 Revision / Reviewed revision / Approved revision фиксируют точный контракт.
 Принятые D-* меняет новый подтверждённый факт, не reviewer preference;
 семантическая правка возвращает Draft/pending, status и receipts ревизию не меняют.
@@ -74,10 +77,20 @@ review/approval revisions нужны для handoff; открытый blocker и
 не обозначается PASS и требует ручной проверки перед исполнением.
 Done требует acceptance/gates; Archived — merge evidence и решение владельца.
 Legacy PRD/plan/feature-brief.md читаются без автоматической конвертации/удаления;
-mixed sources требуют явного Canonical: spec.md. Временные материалы живут в `.work/`.
+mixed sources требуют явного Canonical: spec.md. Approved spec-only остаётся
+источником; adapter к stages/tickets требует явного owner decision. Старый charter
+направляет к актуальному `$qtim-feature` и `$qtim-update`, без конверсии или старта.
+Durable summaries coordinator — `receipts/Txx-aN.md`; worker proposals/raw —
+`.work/Txx/`. Cleanup `.work/` сохраняет spec/ADR/tickets/receipts/runtime.
+`execution.json`/`execution.lock` принадлежат исходному coordinator; наличие
+файла не доказывает acceptance или безопасный resume.
 Каждая spec заканчивается блоком «Что запускать дальше»: recommendation,
-why, topology, command, alternative. Direct/team-lazy/team-up/mission выбираются по
-execution topology, а не размеру; recommendation ничего не запускает. Одновременное
+why, topology, command, alternative. Новый Stage/Ticket план исполняется через `$qtim-feature`: единственный исходный
+coordinator, отдельный чат на тикет, proposed receipt worker. Start, owner acceptance
+и advance — отдельные явные решения; промежуточный PASS не закрывает future AC.
+Execution/recovery имеют канон в установленном skill; guard не sandbox произвольных
+tool calls. Для legacy/spec-only и явного standalone выбора direct/team-lazy/team-up/mission
+выбираются по execution topology, а не размеру; recommendation ничего не запускает. Одновременное
 approval и явное исполнение показанной команды не требуют второго запроса.
 Dev track и нужные writers проверяются отдельно от наличия PM reviewer.
 Approved graph с готовыми base/integration target, scopes,

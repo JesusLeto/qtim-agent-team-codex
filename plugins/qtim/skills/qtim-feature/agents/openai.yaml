@@ -1,4 +1,4 @@
 interface:
   display_name: "qtim Feature"
-  short_description: "От идеи до спецификации с независимым ревью"
+  short_description: "Спецификация, этапы и тикеты с одним оркестратором"
   default_prompt: "Используй $qtim-feature, чтобы подготовить спецификацию этой фичи с независимым ревью."

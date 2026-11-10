@@ -2,14 +2,14 @@
 
 Плагин для Codex, который разворачивает в проекте **команду специализированных subagents**: архитектор, database/backend, frontend, tester, reviewer и дополнительные роли под зрелые продукты. Вместо одного ассистента-универсала ты получаешь воспроизводимый workflow: проектирование, реализация, real-browser QA, ревью и фиксация решений в `memory/`.
 
-qtim двух-ролевой: **разработчик** получает dev-команду с ограниченными циклами implement -> test -> review, **PM/аналитик** — `$qtim-feature`: интервью -> одна спецификация с независимым ревью -> утверждение -> handoff. Роли уживаются в одном проекте.
+qtim двух-ролевой: **разработчик** получает dev-команду с ограниченными циклами implement -> test -> review, **PM/аналитик** — `$qtim-feature`: интервью -> одна спецификация с независимым ревью -> утверждение -> этапы/тикеты с одним coordinator. Исполнение требует явного старта; approval само его не запускает. Роли уживаются в одном проекте.
 
 qtim подстраивается под стек проекта: анализирует репозиторий, задаёт несколько вопросов (первый — твоя роль) и генерирует Codex custom agents под реальные фреймворки, команды и инварианты.
 
 ## Что это даёт
 
 - **Разделение труда** — роли отвечают за свои слои: архитектура, данные, UI, тесты, ревью.
-- **Одна спецификация** — scope, AC, принятые решения, vertical work items и gates в `docs/features/<slug>/spec.md`; один обязательный SPEC_REVIEW и одно approval, consult только по незакрытым фактам.
+- **Одна спецификация** — scope, AC, принятые решения, этапы, связанные Markdown-тикеты, vertical work items и gates в `docs/features/<slug>/spec.md`; один обязательный SPEC_REVIEW и одно approval, consult только по незакрытым фактам.
 - **Встроенные дисциплины** — `$qtim-debug-loop` для сложных багов, `$qtim-prototype` для дизайн-развилки, `$qtim-brainstorm` до ADR, `$qtim-grill` для stress-test плана и `$qtim-minimal-diff` для минимального полноценного объёма решения поставляются самим плагином и доступны любой роли.
 - **Продуктовая память** — `$qtim-product-onboard` собирает из кодовой базы карту разделов, модель акторов, словарь домена и реестр событий аналитики (плюс материалы ПМа из `docs/product-context/`, если есть) — интервью и spec опираются на факты, а не на пересказ.
 - **Актуализация базы знаний** — `$qtim-kb-refresh` проверяет устаревшие ссылки памяти по выбранной Git-базе, инвентаризует артефакты фич, ограничивает объём работы и сверяет потери после записи; `$qtim-kb-format` задаёт компактный формат новых фактов.
@@ -62,11 +62,14 @@ overwrite и auto-archive запрещены.
 
 Каждый ADR получает два прохода: `$qtim-grill` и независимого read-only Astra-оппонента в новом thread без истории. Результат остаётся в самом ADR строкой `adr-stress-test: astra-adversary (xhigh|max) — N findings, M учтено`; этот design gate работает даже когда optional risk-based review кода выключен.
 
-## Стабильная версия
+## Версия и обновление
 
-`2.16.1` — стабильная версия с одной спецификацией и обязательным независимым
-SPEC_REVIEW. Она устанавливается из `main`; смена Git-ветки сама по себе не
-обновляет установленный плагин. История обкатки — в
+`2.17.0` добавляет этапы/тикеты и единого feature coordinator. Выпуск — отдельное
+решение; локальная версия исходников не доказывает публикацию или runtime acceptance.
+После публикации: переустанови плагин командами ниже, открой новую задачу Codex,
+затем выполни `$qtim-update` в существующем проекте для PM summaries/stamps.
+Legacy/spec-only документы и живой execution runtime автоматически не конвертируются.
+Смена Git-ветки сама по себе не обновляет установленный плагин. История обкатки — в
 [архивном руководстве эксперимента](docs/feature-spec-experiment.md).
 
 ## Установка
@@ -125,7 +128,7 @@ codex plugin add qtim@qtim-agent-team              # переустановит�
    $qtim-onboard          # dev: один раз наполнить память картой, инвариантами и конвенциями
    $qtim-product-onboard  # PM: один раз собрать продуктовую память из кода
    $qtim-kb-refresh       # актуализировать память и артефакты фич по проверенному diff
-   $qtim-feature          # PM: интервью -> spec + независимое ревью -> approval -> handoff
+   $qtim-feature          # PM: spec + ревью -> этапы/тикеты; execution только по явному start
    $qtim-mission          # App: видимый DAG, writer worktrees, integration + verification
    $qtim-team-up          # полный эпик с циклами implement -> test -> review
    $qtim-team-lazy        # роли по мере надобности
@@ -141,7 +144,7 @@ codex plugin add qtim@qtim-agent-team              # переустановит�
 | Skill | Когда использовать |
 |---|---|
 | `$qtim-setup` | Один раз в новом проекте: выбрать роль, сгенерировать charter, custom agents и memory; при выборе добавить optional project PostToolUse |
-| `$qtim-feature` | PM/аналитик: интервью, одна spec с независимым ревью, approval и topology-based handoff |
+| `$qtim-feature` | PM/аналитик: spec, этапы/тикеты и ревью; явные start/status/resume/stop через одного coordinator |
 | `$qtim-mission` | Явно запустить Approved DAG видимых Codex App задач: read-only/lazy/writer nodes, topological integration, bounded verification/fixes и `status/resume/stop` без auto-archive |
 | `$qtim-team-up` | Крупная задача/эпик с обратной связью между implement/test/review |
 | `$qtim-team-lazy` | Быстрая или средняя задача без полного прогрева команды |
@@ -169,7 +172,7 @@ codex plugin add qtim@qtim-agent-team              # переустановит�
   validated/integrated receipts, локальные решения и final verification;
   opaque runtime handles остаются в gitignored `.codex/qtim-runtime/`.
 - `AGENTS.md` — указатель для Codex на qtim-команду и локальные правила проекта.
-- `docs/features/<slug>/` — появляется при `$qtim-feature`: один `spec.md`; временные receipts в `.work/`. Legacy PRD/plan/brief читаются без автоматической конверсии.
+- `docs/features/<slug>/` — появляется при `$qtim-feature`: один `spec.md`, опциональный `adr.md`, `tickets/Txx-<slug>.md`, durable coordinator `receipts/Txx-aN.md`; worker proposals/raw — в `.work/Txx/`. `execution.json`/`execution.lock` принадлежат исходному coordinator. Cleanup `.work/` сохраняет остальные artifacts. Legacy PRD/plan/brief и approved spec-only остаются источниками до явного решения об adapter.
 
 ## Как это выглядит
 
@@ -187,8 +190,11 @@ PM/аналитик:
 qtim: интервью -> один spec -> clean-context read-only SPEC_REVIEW
       -> исправления и один targeted recheck при необходимости -> твоё approval
       -> готовый handoff; принятые решения и актуальные checks сохраняются
-Ты:   получаешь docs/features/favorites/ и topology-based команду direct,
-      $qtim-team-lazy, $qtim-team-up или $qtim-mission
+Ты:   получаешь docs/features/favorites/ со стадиями и tickets; явно запускаешь
+      $qtim-feature. Исходный coordinator создаёт отдельный чат текущего тикета,
+      проверяет receipt и возвращает тебе на приемку; переход — по явной команде.
+      Guard не изолирует произвольные peer tools; PASS тикета не закрывает future AC.
+      Legacy/spec-only и явно выбранные standalone team/lazy/mission сохраняются.
 ```
 
 Cross-dialog mission:

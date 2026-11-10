@@ -4,6 +4,64 @@
 
 Правило ведения: при каждом релизе, меняющем сгенерированное состояние, добавляй секцию сверху. Секции хранятся newest-first, но `$qtim-update` всегда применяет попавшие в диапазон шаги oldest -> newest (снизу вверх по файлу). Если релиз не меняет сгенерированное состояние, добавляй секцию с пометкой «миграция не требуется».
 
+## 2.17.0
+
+Миграция с 2.16.1: generated PM summaries переходят к stages/tickets.
+Выполни предыдущие applicable секции oldest -> newest; этот шаг не конвертирует
+действующие feature docs или execution state. Покажи scoped diff и получи approval.
+
+1. Сопоставь qtim ownership по stamp, roster, filename/name и уникальным anchors.
+   В PM-блоке charter распознавай прежнюю сводку `интервью` / `spec.md` /
+   `SPEC_REVIEW`, одну WI-таблицу и topology-based handoff. Обнови только эти
+   qtim-owned абзацы по текущему setup: Stage/WI/Ticket, стабильные S*/WI-*/Txx,
+   `tickets/Txx-<slug>.md`, AC/DRI/contributing/technical prerequisites и stage/final
+   gates. Одна стадия/один тикет допустимы. SPEC_REVIEW, language и review budget
+   сохраняются. Main thread — редактор; исполнение ведёт единственный исходный
+   coordinator через `$qtim-feature`, отдельный чат на тикет. Approval само не
+   запускает работу; start, owner acceptance и advance — отдельные решения.
+   Промежуточный PASS не закрывает future AC; guard не sandbox произвольных tools.
+   Сам algorithm execution/recovery в generated файлы не копируй.
+2. В общем working-rules абзаце с fingerprint `Approved plan авторизует`
+   уточни только его standalone scope: в feature-sequential границы текущего
+   тикета/advance принадлежат исходному coordinator. Второй track, mission,
+   остальные working rules и ручные вставки не меняй. В PM summary раздельно
+   укажи durable `receipts/Txx-aN.md`, worker proposals/raw `.work/Txx/` и
+   coordinator-owned `execution.json`/`execution.lock`. Cleanup `.work/` сохраняет
+   contracts/receipts/runtime; наличие файлов не доказывает acceptance/resume.
+3. В однозначно сопоставленном product TOML обнови только абзацы с anchors
+   `Work items — одна таблица спецификации` (или golden `one vertical-slice WI table`,
+   прежний PM-only `Help the main editor interview and produce spec.md`),
+   `approval и handoff координирует main thread` и legacy preservation. Цель —
+   компактный Stage/WI/Ticket contract из текущего template, proposed text/evidence
+   и граница единственного coordinator. Сохрани language, полную atomic model pair,
+   modes, accepted decisions и ручные инструкции. Другие role instructions не меняй.
+4. В `AGENTS.md` только внутри `qtim:contract:start/end` обнови распознанный старый
+   абзац `Новые feature используют одну spec.md` / `режим ревью кода его не выключает`.
+   Если старого абзаца нет, добавь сводку только рядом с единственной managed строкой
+   `$qtim-update` / `$qtim-doctor`. Целевой текст из setup:
+
+   > Новые feature используют spec.md с этапами и `tickets/Txx-<slug>.md`; SPEC_REVIEW
+   > предшествует approval. Исполнение — через `$qtim-feature`: один coordinator,
+   > отдельный чат на тикет; worker возвращает proposal. Approval само не запускает работу.
+   > Правила ревизий, gates и durable receipts — в charter.
+
+   Уже полный target — applied без дубля. Непарные markers, несколько anchors,
+   partial/ручной конфликт — pending с exact scoped delta; whole-region overwrite
+   не разрешён. Внешний текст, foreign agents/hooks и dev track byte-for-byte сохранены.
+5. Approved spec-only и legacy PRD/plan/brief остаются источниками с прежними
+   approvals/Done. Adapter к stages/tickets — только отдельное owner decision;
+   update/setup не создают tickets/ledger и не перемещают canonical execution root.
+   Старый charter направляет к актуальному `$qtim-feature` и `$qtim-update`;
+   unknown execution format/owner/root блокирует resume, не означает empty state.
+   Durable `memory/`, `docs/features/`, runtime JSON/lock, ignore и hooks не меняются.
+6. Проверь self-contained summaries, exact allowed regions, сохранность manual/dev/
+   foreign bytes и overrides. При первом pending остановись: charter и все qtim
+   stamps остаются на последней полностью завершённой версии. Только после всех
+   applicable applied/compatible шагов подними charter и stamps всех однозначно
+   сопоставленных qtim role TOML до `2.17.0`, у остальных ролей меняя только stamp.
+   После agent TOML нужна новая задача Codex. Snapshot fixtures подтверждают
+   documented target/preservation, не исполнение миграции в живом проекте.
+
 ## 2.16.1
 
 Миграция не требуется: добавлены только UI-метаданные команд плагина.

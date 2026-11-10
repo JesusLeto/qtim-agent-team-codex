@@ -28,6 +28,17 @@ topological ff-only promotion и bounded final verification; подробный 
 
 ## Approved Scope And Phase Autopilot
 
+Для feature-sequential по новому Stage/Ticket плану действует
+[feature-execution.md](feature-execution.md): ticket acceptance и advance принадлежат
+исходному coordinator. Автопилот ниже действует внутри текущего разрешённого тикета;
+он не разрешает переход к следующему. Standalone/team/lazy/mission сохраняют свой
+контракт; адаптация старого плана — по [feature-pipeline.md](feature-pipeline.md).
+Ticket-local team/lazy main возвращает proposed receipt и наблюдение release,
+а очередь/Accepted/next принадлежат исходному feature coordinator. Он сверяет
+actual diff, result/evidence и завершение writers, не только self-report.
+Independent review получает durable reservation до fan-out; reserve/complete,
+shared pools, transfer/reuse и App recovery имеют один канон в feature-execution.
+
 Утверждённый ticket/spec и явные ограничения пользователя задают границу
 работы. Проверяй находки reviewer по этой границе: дефект, который мешает
 acceptance criteria или обязательному security gate, исправляй в scope;
@@ -54,6 +65,11 @@ resume, смене агента и lazy → team-up. Обязательные se
 acceptance gates и ADR adversary остаются в силе.
 
 ## Verification Evidence And Reuse
+
+В feature-sequential durable coordinator receipts живут в `receipts/Txx-aN.md`,
+worker proposals/raw evidence — в `.work/Txx/` по
+[feature-execution.md](feature-execution.md). Путь `.work/validation.md` ниже
+остаётся для остальных workflows; правила fingerprint/reuse общие.
 
 На каждый gate назначь одного владельца. Перед запуском проверь существующий
 receipt и активный процесс. Храни receipts в существующем
