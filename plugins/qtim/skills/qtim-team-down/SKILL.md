@@ -13,6 +13,11 @@ In Codex there is no persistent team object on disk; "down" means close active a
 
 ## Steps
 
+В feature-ticket mode закрывай только разрешённые local resources и возвращай
+proposed handoff/release исходному `$qtim-feature` coordinator. Записи shared
+memory/spec/status из steps ниже не выполняй от лица worker: contracts, queue,
+accepted receipts и runtime остаются у coordinator, продвижение — по его workflow.
+
 1. List the active qtim agent threads you have in current context.
 2. Ask any running thread for a concise final status if needed.
 3. Close completed or no-longer-needed threads when the close tool is available.
@@ -41,7 +46,11 @@ In Codex there is no persistent team object on disk; "down" means close active a
    переведи новую spec в `Archived` по `../../reference/feature-pipeline.md`:
    сохрани `spec.md` (или legacy `prd.md`/`plan.md`/`feature-brief.md`), обнови существующий
    короткий итоговый указатель в `memory/decisions.md`, удали только
-   идентифицированные как временные файлы `.work/`. Само сворачивание команды
+   идентифицированные как временные файлы `.work/`. Сохрани ADR, `tickets/`,
+   durable `receipts/Txx-aN.md` и coordinator-owned `execution.json`/`execution.lock`.
+   Для feature-sequential верни исходному `$qtim-feature` coordinator proposed
+   handoff/release; team-down не меняет его queue/acceptance/runtime и не запускает next.
+   Само сворачивание команды
    не доказывает `Done` и не разрешает удаление; без evidence или решения
    владельца сохрани статус `Done` и сообщи о незавершённой архивации.
    Legacy-контракт остаётся без автоматических правок/конвертации: архивный

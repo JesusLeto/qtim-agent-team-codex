@@ -1,17 +1,42 @@
 ---
 name: qtim-feature
-description: "Turn a raw feature idea into one revisioned specification through a decision interview, mandatory independent specification review, user approval, and implementation handoff; resume an existing feature without reopening settled decisions."
+description: "Plan a revisioned feature with stages and tickets, or coordinate an explicitly authorized ticket start, status, resume or stop; preserve approved decisions and return each ticket to its original coordinator for acceptance."
 ---
 
 # qtim Feature
 
 Интервью → одна спецификация с независимым ревью → утверждение → handoff.
-Этот вызов разрешает bounded read-only consult и обязательный reviewer, но не
-production code, SQL, тесты или запуск реализации.
+Planning route разрешает bounded read-only consult и обязательный reviewer.
+Исполнение требует отдельного явного намерения и ограничено текущим ticket.
 
-Канон документа, ревизий, принятого scope и legacy adapter —
+## Intent routing
+
+До planning preconditions определи намерение по прямому запросу пользователя:
+
+- «спланируй», «только план», обычный вызов без execution request → planning
+  ниже; spec approval сам по себе не запускает implementation.
+- `start`/«запусти текущий тикет» → coordinator protocol из
+  `../../reference/feature-execution.md`: capabilities/authorization, проверенная
+  база, durable intent, новый peer с preflight-only prompt и отдельный write-go.
+- `status` → только чтение по тому же reference; без init, исправления ledger,
+  follow-up, нового peer или фонового мониторинга.
+- `resume` → исходный coordinator проверяет root/ownership, revisions, peer,
+  result/writers и budgets; reconciliation предшествует любому side effect.
+- `stop` → остановка продвижения и наблюдаемое завершение writers по reference;
+  `Stopped` не означает release. Неподтвержденная остановка блокирует handoff.
+
+Неоднозначное намерение оставляет execution без side effects до уточнения.
+Нужных guard/App capabilities нет → Blocked/Unavailable для writer execution;
+read-only status остается допустим. Другой workflow выбирает владелец.
+Ticket worker не становится feature coordinator от вызова этого skill: он
+возвращает proposed receipt/запрос решения исходному coordinator.
+
+Канон документа, этапов/тикетов, ревизий, принятого scope и legacy adapter —
 `../../reference/feature-pipeline.md`; бюджет и независимость review —
 `../../reference/independent-review.md`. Main thread — единственный редактор spec.
+Planning-only не создаёт implementation peers или execution ledger. Контракт
+отдельного разрешённого исполнения — `../../reference/feature-execution.md`;
+наличие reference не подтверждает runtime capabilities guard/App adapter.
 
 ## Preconditions и resume
 
@@ -25,7 +50,8 @@ production code, SQL, тесты или запуск реализации.
    отсутствие указателя при актуальном Approved spec означает завершение handoff,
    а не новое интервью. Legacy `feature-brief.md`/`prd.md` не конвертируй автоматически.
 4. До записи `docs/features/` или `memory/` прочитай `$qtim-kb-format`.
-   Consult/raw review/логи — в `.work/`; контракт — один `spec.md`.
+   Consult/raw review/логи — в `.work/`; требования — один `spec.md`, границы
+   реализации — связанные `tickets/Txx-<slug>.md` по reference, без нового `plan.md`.
 
 Роли и fallbacks запускай по model-profiles: сохраняй явные пары и пользовательские
 overrides, учитывай уже подтверждённую недоступность runtime. Prompts/follow-ups
@@ -50,13 +76,17 @@ intake approval. Новый противоречащий факт возвращ
 
 ## 2. Спецификация и независимое ревью
 
-Собери spec по reference: AC, подтверждённые решения, одна WI-таблица с ownership,
-файлами, порядком, зависимостями и review boundaries, gates, риски и rollback.
+Собери spec по reference: AC, подтверждённые решения, одна Stage/WI/Ticket-таблица
+с ownership, scope, техническими prerequisites и review boundaries, stage/final
+gates, риски и rollback. Подготовь связанные ticket contracts с точными входами,
+собственными AC, достаточным стендом, проверками, expected receipt и стартовым
+prompt. Одна стадия/один тикет валидны; очередь отделена от dependencies.
+Проверь покрытие каждого feature AC и отсутствие циклов/несуществующих inputs.
 Небольшая фича получает короткий документ, большая — больше проверяемых срезов;
 отдельных full/fast процессов и артефактов нет. Оценку добавляй лишь по реальному
 запросу/решению, без отдельного checkpoint.
 
-Заранее заполни handoff и Execution Recommendation Gate по topology reference,
+Заранее заполни handoff и Execution Recommendation Gate по feature-pipeline,
 включая нужный dev track/writers. Reviewer в PM roster сам по себе не dev-ready.
 Если возник настоящий ADR, сохрани обязательный clean-context ADR adversary до
 approval; обычная спецификация не создаёт ADR или дополнительный review лишь
@@ -65,7 +95,9 @@ approval; обычная спецификация не создаёт ADR или
 Main thread запускает существующего `qtim-reviewer` в `SPEC_REVIEW` по
 independent-review: механически read-only, чистый контекст (`fork_turns = "none"`),
 минимальный source pack без авторской истории. Передай текущую ревизию, raw
-требования/ответы владельца, spec, инварианты и проверяемые источники.
+требования/ответы владельца, spec и связанные ticket revisions, инварианты и
+проверяемые источники. Проверка включает покрытие AC, prerequisites, достаточность
+стенда каждого тикета и stage/final gates.
 Reviewer возвращает `READY_FOR_APPROVAL` либо `CHANGES_REQUESTED` с evidence и
 затронутыми `AC-*`/`D-*`/`WI-*`; build/tests/browser в planning не запускает.
 

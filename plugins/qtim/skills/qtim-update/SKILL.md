@@ -106,6 +106,7 @@ codex plugin add qtim@qtim-agent-team              # переустановит�
 - для PM track со stamp 2.15.0+ корневой `.gitignore` содержит ровно одну строку
   `docs/features/**/.work/`; существующие tracked файлы не удалены миграцией;
 - для PM track со stamp 2.16.0-experimental.1+ reviewer присутствует, механически read-only и содержит SPEC_REVIEW независимо от code-review toggle; dev readiness проверяется отдельно по dev track/исполнителям;
+- для stamp 2.17.0+ новый PM summary содержит stages/tickets, одного исходного coordinator через `$qtim-feature`, durable `receipts/` отдельно от `.work/`; managed feature-summary в AGENTS соответствует setup. Approved spec-only/legacy sources и execution runtime сохранены без конверсии. Старый charter предлагает актуальный skill/adapter и `$qtim-update`, не разрешает автоматический start;
 - в изменённых файлах нет plugin-internal путей (`../../...`);
 - финальный ответ: версии до/после, изменённые файлы, compatible overrides и pending; при pending явно скажи, что stamps остались на последней полностью завершённой версии и целевая migration не завершена. Если менялся любой `.codex/agents/*.toml`, новая задача Codex **обязательна** перед qtim workflow. Если менялись hooks, открой `/hooks`, заново review/trust изменённые definitions; если текущий runtime не подхватил их после review, открой новую задачу. Если agent TOML и hooks не менялись, дополнительный restart не нужен.
 

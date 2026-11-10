@@ -1,7 +1,7 @@
 {
   "name": "qtim",
-  "version": "2.16.1",
-  "description": "qtim feature planning with one specification, independent review and bounded verification; explicit Codex teams and missions.",
+  "version": "2.17.0",
+  "description": "qtim feature specifications with stages, tickets and one explicit coordinator; independent review, Codex teams and missions.",
   "author": {
     "name": "Антон Фокин"
   },
@@ -23,8 +23,8 @@
   "skills": "./skills/",
   "interface": {
     "displayName": "qtim",
-    "shortDescription": "Single-spec qtim feature workflow",
-    "longDescription": "qtim feature planning: interview, one specification, mandatory independent read-only review, user approval and explicit handoff. Accepted decisions and valid verification receipts survive resume. Existing Codex dev teams, knowledge refresh and explicit cross-dialog missions keep their scope and integration contracts.",
+    "shortDescription": "Feature stages, tickets and one coordinator",
+    "longDescription": "qtim feature planning: one specification with stages and tickets, independent review and owner approval. Explicit execution uses one original coordinator and a separate chat per ticket; workers return evidence for review and acceptance. Approval alone starts nothing. Legacy/spec-only sources, ordinary Codex teams and explicit missions retain their contracts.",
     "developerName": "Антон Фокин",
     "category": "Developer Tools",
     "capabilities": [

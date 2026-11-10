@@ -2,6 +2,24 @@
 
 Версии соответствуют `version` в `plugins/qtim/.codex-plugin/plugin.json` (semver).
 
+## 2.17.0 — 2026-11-09
+
+- Новые feature plans: одна spec, этапы и самостоятельные Markdown-тикеты;
+  один исходный coordinator создаёт отдельный чат текущего тикета, проверяет
+  результат и возвращает владельцу на приемку. Approval не запускает исполнение;
+  acceptance/advance явные, частичный PASS не закрывает future gates.
+- Локальный state guard и coordinator protocol добавляют проверяемые transitions,
+  durable launch intent, bounded review и recovery. Guard не изолирует произвольные
+  peer tools; live App acceptance остаётся отдельным gate, публикация его не доказывает.
+- Setup, product template, managed AGENTS и golden согласованы с новым summary.
+  Scanner отдельно инвентаризует spec/ADR/tickets/durable receipts/runtime;
+  status/revision и knowledge-loss проверки сохранены. Cleanup `.work/` сохраняет
+  durable receipts и coordinator runtime.
+- Существующим командам после публикации: marketplace upgrade + переустановка
+  плагина, новая задача Codex, затем `$qtim-update` для scoped PM migration и stamps;
+  после agent TOML нужна новая задача. Approved spec-only/legacy docs и живой ledger
+  автоматически не конвертируются. Standalone team/lazy и full mission сохранены.
+
 ## 2.16.1 — 2026-11-09
 
 - Все 18 команд в меню используют единый формат `qtim <Название>` и короткие

@@ -30,8 +30,10 @@ Spec format, revision lock и handoff — по PM charter и feature-pipeline re
 Для интервью предлагай один вопрос за раз с рекомендуемым ответом. Факты из кода
 и памяти выясняй чтением; невыводимое продуктовое решение возвращай владельцу.
 
-Work items — одна таблица спецификации: id, AC, DRI, contributing роли/слои,
-файлы, зависимости/порядок и стабильная граница review. Каждый item — проверяемый
+Work items — одна Stage/WI/Ticket-таблица спецификации: стабильные S*/WI-*/Txx,
+ссылка на `tickets/Txx-<slug>.md`, AC, DRI, contributing роли/слои, файлы,
+технические prerequisites и стабильная граница review. Одна стадия/один тикет
+допустимы; stage/final gates сохраняют покрытие AC. Каждый item — проверяемый
 вертикальный срез через затронутые слои; DRI владеет главной acceptance boundary.
 Отдельная таблица фаз не пересказывает те же items. Широкий rename/retype режь
 через expand-contract. Разрежь очевидный XL item независимо от оценки.
@@ -45,13 +47,19 @@ Production code, SQL-миграции и тесты не пишешь. Consult-�
 не приказ: сверяй их с инвариантами charter. Продуктовые развилки (новый актор,
 необратимая операция, двусмысленное поведение, публичный контракт) возвращай
 пользователю через main thread. Descendants не спавни; mandatory SPEC_REVIEW,
-approval и handoff координирует main thread.
+approval и handoff координирует main thread. Для Stage/Ticket исполнения
+единственный исходный coordinator по `$qtim-feature` владеет contracts,
+очередью и приемкой; ты возвращаешь proposed text/evidence, не запускаешь
+следующий тикет. Approval само не запускает исполнение; execution logic здесь
+не дублируется. Durable summaries — `receipts/Txx-aN.md`, proposals/raw — `.work/Txx/`.
 
 Перед записью порученного process output в `docs/features/` прочитай
 `$qtim-kb-format`: consult-материалы — в `.work/`, spec и её статус/ревизии
 обновляет main thread. Для действующей Approved feature не создавай параллельные
 intake/PRD/decomposition/plan/brief. Legacy документы читай как источники;
-автоматически не переписывай, не конвертируй и не удаляй.
+автоматически не переписывай, не конвертируй и не удаляй. Approved spec-only
+тоже сохраняет источник; stages/tickets adapter требует явного решения владельца.
+Старый charter сверяй с актуальным `$qtim-feature`, drift направляй в `$qtim-update`.
 
 Пользуйся продуктовой памятью активно: термины — из product-glossary, акторы и границы видимости — из product-actors, метрики успеха spec привязывай к реальным событиям из product-metrics, а не выдуманным. Если по ходу работы термин, актор или раздел уточнился или память устарела — предложи конкретное обновление memory/product-*.md в финальном выходе (сам memory не правишь — пишет team-lead).
 

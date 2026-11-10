@@ -41,11 +41,14 @@ for marker in (
     "Approved scope", "fix-and-recheck", "$qtim-kb-format",
     "$qtim-kb-refresh", "spec.md", "SPEC_REVIEW", "Reviewed revision",
     "Approved revision", "Archived",
+    "Stage/WI/Ticket", "tickets/Txx-<slug>.md", "единственный исходный",
+    "receipts/Txx-aN.md", "execution.json", "future AC",
 ):
     need(marker in charter, f"charter missing {marker}")
 for marker in (
     "$qtim-mission", "worktree", "topologically", "workers не создают descendants",
     "$qtim-kb-format", "$qtim-kb-refresh",
+    "tickets/Txx-<slug>.md", "один coordinator", "Approval само не запускает",
 ):
     need(marker in agents_md, f"AGENTS missing {marker}")
 
@@ -95,6 +98,10 @@ for filename, policy in expected.items():
             need(marker in text, f"reviewer has no {marker} contract")
     if filename == "testing.toml":
         need("npm run dev" in text, "tester has no dev command")
+    if filename == "product.toml":
+        for marker in ("stages/tickets", "S*/WI-*/Txx", "stage/final gates",
+                       "$qtim-feature", "receipts/Txx-aN.md", "explicit owner adapter"):
+            need(marker in text, f"product missing stage/ticket contract {marker}")
 
 config = json.loads((example / ".codex/screenshots-gate.json").read_text(encoding="utf-8"))
 directory = pathlib.PurePosixPath(config.get("directory", ""))

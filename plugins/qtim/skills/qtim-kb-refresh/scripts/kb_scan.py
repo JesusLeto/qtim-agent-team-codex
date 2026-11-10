@@ -216,10 +216,33 @@ def feature_summary(repo: Path) -> dict[str, object]:
     statuses: Counter[str] = Counter()
     done: list[str] = []
     issues: list[dict[str, object]] = []
+    artifacts: dict[str, list[str]] = {
+        kind: [] for kind in ("spec", "adr", "legacy", "tickets", "receipts", "runtime")
+    }
     folders: dict[Path, list[Path]] = {}
     for path in md_files(repo, "docs/features", skip_hidden=True):
+        parts = path.relative_to(repo / "docs/features").parts
+        kind = None
+        if len(parts) == 2:
+            if path.name in {"spec.md", "adr.md"}:
+                kind = path.stem
+            elif path.name in LEGACY_FEATURES:
+                kind = "legacy"
+        elif len(parts) > 2 and parts[1] in {"tickets", "receipts"}:
+            kind = parts[1]
+        if kind is not None:
+            artifacts[kind].append(path.relative_to(repo).as_posix())
         if path.name in CANON_FEATURES:
             folders.setdefault(path.parent, []).append(path)
+    top = repo / "docs/features"
+    if top.is_dir():
+        for folder in sorted(top.iterdir()):
+            if not folder.is_dir() or folder.is_symlink() or folder.name.startswith("."):
+                continue
+            for name in ("execution.json", "execution.lock"):
+                path = folder / name
+                if path.is_file() and not path.is_symlink():
+                    artifacts["runtime"].append(path.relative_to(repo).as_posix())
     for _, paths in sorted(folders.items()):
         spec = next((path for path in paths if path.name == "spec.md"), None)
         if spec is not None:
@@ -268,7 +291,8 @@ def feature_summary(repo: Path) -> dict[str, object]:
                     if status.lower() == "done":
                         done.append(path.relative_to(repo).as_posix())
                     break
-    return {"status_counts": dict(sorted(statuses.items())), "done_artifacts": sorted(done), "issues": issues}
+    return {"status_counts": dict(sorted(statuses.items())), "done_artifacts": sorted(done), "issues": issues,
+            "artifacts": {kind: sorted(paths) for kind, paths in artifacts.items()}}
 
 
 def overwrite_suspects(repo: Path, cache: dict[tuple[str, str], str | None]) -> list[dict[str, object]]:

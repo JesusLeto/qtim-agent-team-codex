@@ -9,6 +9,27 @@ Invocation of this skill is explicit permission to run a Codex subagent workflow
 
 Use Codex subagent threads and custom agents. Do not assume a hidden persistent team object.
 
+## Feature-ticket mode
+
+Если текущая App task — отдельно разрешенный feature ticket, сначала проверь
+coordinator thread/host, canonical execution root, exact ticket/attempt/marker,
+revisions, physical worktree/base/dirty fingerprint и write scope из dispatch.
+До свежего bounded write-go выполняй только read-only preflight. Полученный
+пакет ограничивает все steps ниже текущим ticket; depth/model/risk/review остаются
+по их существующим канонам, локальные роли — только явно разрешенные.
+
+Local main не пишет spec/ADR/contracts, execution ledger, очередь, accepted
+receipts и не создает App peer/next ticket. Он проверяет результаты своих ролей,
+закрывает их writers/background processes и возвращает proposed receipt в
+разрешенном `.work/Txx/`: AC/evidence, actual diff/result identity, handles либо
+none и release observation. Independent review каждого ticket/WI запускает только
+исходный coordinator после durable reservation по `../../reference/feature-execution.md`.
+Local main передает checked candidate/quiescence и ожидает его review/fix decision;
+ticket independent reviewer исключен из local roster/spawn/fix steps ниже.
+Mandatory review сохраняется; Accepted/advance также принадлежат coordinator.
+Новая роль, продуктовая развилка или изменение scope возвращаются ему запросом;
+пересылка другого чата не создает human authorization.
+
 ## Preconditions
 
 1. Read `.codex/team-charter.md`.
@@ -26,7 +47,9 @@ Use Codex subagent threads and custom agents. Do not assume a hidden persistent 
    `../../reference/feature-pipeline.md`: проверь текущие Reviewed revision,
    Approved revision и готовность handoff; незакрытый spec gate возвращает к
    `$qtim-feature` до реализации. Main thread — единственный редактор
-   spec; до работы он ставит `In Development`, после обязательных gates — `Done`.
+   spec; в standalone mode до работы он ставит `In Development`, после обязательных gates — `Done`.
+   Feature-ticket main возвращает только proposed ticket receipt и останавливается;
+   epic-state/соседние WI читает лишь когда они нужны exact current-ticket inputs.
    Существенная дельта требует revision contract, остальные результаты идут в
    `.work/validation.md`. При отсутствии spec читай legacy `plan.md` + `prd.md`
    или `feature-brief.md` как контракт без автоматических правок/конвертации.
@@ -36,6 +59,8 @@ Approved spec/legacy-контракт вместе с явными ограни�
 При явном запуске выполняй утверждённые work items подряд; новый checkpoint нужен только для новой
 продуктовой развилки, необратимого действия вне approval, изменения scope или
 исчерпанного бюджета доработок. Старт следующего work item уже разрешён запуском.
+В feature-ticket mode это только работы внутри текущего ticket; следующий ticket
+требует решения исходного coordinator и не запускается local main.
 
 ## Decision Matrix
 
@@ -58,6 +83,9 @@ Codex subagents are task-scoped agent threads, not durable named team members.
 - Close completed threads when no longer needed so the next batch has capacity.
 
 ## Spawning
+
+В feature-ticket mode local spawn относится к прочим явно разрешенным ролям;
+ticket/WI independent reviewer запускает coordinator по handoff выше.
 
 Spawn only currently needed roles in parallel when the subagent tool is available; batch the roster when independent work exceeds the available thread slots.
 
@@ -124,7 +152,10 @@ For implementation agents, remind them that other agents may edit in parallel an
    `orchestration-patterns.md`. Общие проверки выполняй после завершения
    соответствующих writers. Tester закрывает реальное browser acceptance для UI
    актуальным evidence; self-check frontend остаётся отдельным покрытием.
-7. Для предусмотренного code-review gate reviewer делает первый проход на
+7. В feature-ticket mode передай checked candidate/quiescence исходному coordinator
+   и ожидай его review/fix decision; local reviewer/fix-and-recheck шаг ниже
+   не выполняется. Исправления требуют его свежего bounded write-go.
+   Для остальных режимов: для предусмотренного code-review gate reviewer делает первый проход на
    стабильную границу WI/пакета и проверяет
    актуальность receipts; отсутствующие или устаревшие gates выполняет их
    назначенный владелец. Подтверждённые блокеры проходят не больше двух
@@ -152,7 +183,7 @@ Final report should be result-first:
 - gates run and status;
 - findings fixed or left open;
 - memory files updated;
-- для feature — выполненные WI и Status `spec.md`, существенные дельты и
+- для standalone feature — выполненные WI и Status `spec.md`, существенные дельты и
   `.work/validation.md`; для legacy — прогресс в `.work/` без правок контракта;
 - если в preconditions найден незавершённый epic-state — его резюме и предложение продолжить;
 - active agent threads closed or still running.
