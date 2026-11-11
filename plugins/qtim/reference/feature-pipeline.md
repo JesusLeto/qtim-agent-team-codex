@@ -185,7 +185,9 @@ Handoff полностью составлен **до** review и approval. Он 
 Для нового stage/ticket плана recommendation — последовательное исполнение через
 исходный feature coordinator по feature-execution: новый чат на тикет и возврат
 в coordinator для проверки/приемки. Handoff фиксирует очередь, stage/final gates,
-workspace/git permissions и canonical execution root до init ledger.
+workspace/git permissions, режим поэтапной приёмки нового плана и canonical
+execution root до init ledger. Для исключений укажи условие ручной остановки
+и требуемое решение в ticket contract до review/approval.
 Planning-only заканчивается после handoff; approval spec, разрешение старта,
 worker completion, проверка coordinator, owner acceptance, advance и release —
 разные решения по execution reference. Рекомендация не доказывает наличие
@@ -207,8 +209,10 @@ Recommendation остаётся `RECOMMEND`:
 она не запускает реализацию, `spawn_agent` или peer tasks. Явное разрешение
 пользователя в том же сообщении с approval достаточно для запуска, дополнительных
 стартовых согласований standalone-фаз нет, кроме выбранного phase-by-phase режима
-или новой существенной развилки. В feature-sequential действуют ticket acceptance
-и отдельное разрешение advance из feature-execution.
+или новой существенной развилки. В новом feature-sequential плане проверенный
+обычный тикет продвигает свой этап. Владелец принимает предъявленный этап и
+явно разрешает следующий. Эти решения можно дать одной командой. Утверждённые
+потикетные планы сохраняют прежний порядок.
 
 Пример готовой команды:
 

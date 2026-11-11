@@ -1,4 +1,4 @@
-<!-- qtim-version: 2.17.0 -->
+<!-- qtim-version: 2.18.0 -->
 # qtim team charter — fullstack golden
 
 ## Roles and model matrix
@@ -86,8 +86,10 @@ Durable summaries coordinator — `receipts/Txx-aN.md`; worker proposals/raw —
 файла не доказывает acceptance или безопасный resume.
 Каждая spec заканчивается блоком «Что запускать дальше»: recommendation,
 why, topology, command, alternative. Новый Stage/Ticket план исполняется через `$qtim-feature`: единственный исходный
-coordinator, отдельный чат на тикет, proposed receipt worker. Start, owner acceptance
-и advance — отдельные явные решения; промежуточный PASS не закрывает future AC.
+coordinator, отдельный чат на тикет, proposed receipt worker. В новом плане обычный
+тикет после проверки и release продвигает этап. Владелец принимает этап и явно
+разрешает следующий, при желании одной командой. Утверждённые потикетные планы
+сохраняют прежние правила. Промежуточный PASS не закрывает future AC.
 Execution/recovery имеют канон в установленном skill; guard не sandbox произвольных
 tool calls. Для legacy/spec-only и явного standalone выбора direct/team-lazy/team-up/mission
 выбираются по execution topology, а не размеру; recommendation ничего не запускает. Одновременное

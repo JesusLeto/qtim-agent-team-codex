@@ -65,6 +65,10 @@ guard, не обещание механического fencing для прои�
 
 ## Переходы и решения
 
+Утверждённые планы без поля `acceptance` используют потикетную приёмку
+из таблицы. Для нового плана зафиксируй режим поэтапной приёмки до review и
+approval (см. следующий раздел).
+
 | Событие | Условие и результат |
 |---|---|
 | Spec approval | Владелец утверждает показанную актуальную ревизию после её review. Само по себе не создаёт ledger/peer и не принимает реализацию |
@@ -91,6 +95,73 @@ bounded fix, не запускает соседа. После разрешени
 peer требует нового attempt **того же ticket**, нового preflight/launch и сохранения
 review budget/history. Из Awaiting acceptance исправление также требует нового
 write-go, повторной проверки результата и release; прежнее разрешение записи погашено.
+
+## Поэтапная приёмка
+
+В новом stage/ticket плане укажи поэтапную приёмку в spec и передай
+`plan.acceptance: "stage"` при init. Для обязательной остановки запиши в ticket
+contract проверяемое условие и требуемое решение владельца. Такой ticket содержит
+`owner_stop: {condition, decision}` в guard. Утверждение фиксирует эти поля,
+очередь и stage/final gates. Режим запуска сохраняется при `revise`/`transfer`.
+
+Старт этапа разрешает обычные переходы внутри утверждённой очереди этого этапа.
+Соблюдай явные ограничения владельца на число тикетов и действия. `launch`
+сохраняет durable intent с `decision: null`: разрешение первого этапа записано
+при init, последующего — в решении по предыдущему этапу. После явного `stop`
+новый `launch` требует scoped owner decision по прежней формуле launch.
+Input последующих запусков совпадает с последним released snapshot. Каждый
+worker проходит отдельный preflight и получает bounded write-go.
+
+1. После result и formal writer-release coordinator сверяет фактический diff,
+   revision, receipt, AC/checks и независимый review. Запиши `verify {stop, evidence}`.
+   Evidence подтверждает техническую проверку и фактический исход согласованного
+   условия. Без условия передай `stop: false`. FAIL, BLOCKED, неизвестный исход
+   условия, stale result или неподтверждённая остановка writer блокируют переход.
+   `Verified` удовлетворяет зависимости внутри этапа. `advance` без decision
+   перемещает очередь в рамках этапа, затем `launch` запускает следующий тикет.
+   При `stop: true` дождись указанного решения и запиши `accept` с scope
+   SHA-256 canonical JSON `{receipt, verification}`. Это касается и последнего
+   тикета этапа.
+2. Когда все живые тикеты этапа проверены, ручные остановки закрыты и writers
+   освобождены, `status.stage.gate_result_sha256` связывает набор результатов.
+   Запиши каждый требуемый `gate {stage, id, evidence, result_sha256}` с этим
+   хешем и доказательством проверки именно этого результата, включая dev,
+   если он предусмотрен и отдельно разрешён. На последнем живом тикете этапа
+   предъяви diff, receipts, gates и точный `status.stage.result_sha256`.
+3. Привяжи owner decision к SHA-256 canonical JSON
+   `{stage, plan_sha256, result_sha256, action, target}` из предъявления.
+   Canonical JSON — UTF-8, ключи отсортированы, без отступов/пробелов между
+   полями, Unicode без ASCII escaping.
+   - «Принимаю этап» → `stage-accept {decision, advance: false}` с action
+     `accept` и `target: null`. Очередь остаётся на границе.
+   - «Принимаю этап, запускай следующий» → `stage-accept {decision, advance: true}`
+     с action `accept-and-advance` и `target` из `next_ticket` предъявления.
+     Приёмка и перемещение очереди сохраняются атомарно.
+   - «Запускай следующий» после отдельной актуальной приёмки →
+     `stage-advance {decision}` с action `advance` и тем же правилом target.
+   - Отклонение → `stage-reject {decision, repair}` с action `reject` и ID
+     выбранного тикета в `target` и `repair`. Текущий этап остаётся открытым.
+     С этого тикета до конца этапа нужны новые attempts, проверка и release.
+     Исправление в согласованном scope проходит новый preflight/write-go.
+     Для смены контракта сначала проведи утверждённый `revise`/`transfer`.
+     Предыдущие gates и решения сохраняются. Изменение результата или плана
+     требует свежих gates и решений.
+   - При провале обязательной проверки этапа предъяви технический результат
+     из `status.stage.gate_result_sha256`, ID проверки и evidence провала.
+     После решения владельца используй `stage-reject {decision, repair, failed_gate}`.
+     В scope решения передай этот технический хеш как `result_sha256` и
+     добавь `failed_gate: {id, evidence}`. Guard проверяет это доказательство
+     и открывает исправление. Для приёмки и перехода по-прежнему нужны
+     пройденные проверки этапа.
+4. Ответ на решение об этапе не выдаёт dispatch. Перед запуском прочитай
+   ledger/sequence и проверь current/intent. После записи разрешения без intent
+   продолжи обычным `launch`. При сохранённом intent сначала проверь peer по
+   recovery boundary. Повтор команды не выдаёт новый intent или grant.
+5. После отдельной приёмки последнего этапа проведи final integration.
+   Запиши `gate` со `stage: null` и хешем
+   `status.stage.final_gate_result_sha256`. Затем предъяви доказательства
+   и получи отдельное решение для `done` с `status.stage.done_scope_sha256`.
+   Release и deploy сохраняют отдельную авторизацию.
 
 ## Receipt и передача worktree
 
@@ -163,8 +234,9 @@ context остаются независимой проверкой coordinator. 
 
 Именованные transitions и exact JSON examples исполняются existing repo runner
 `.github/scripts/check_feature_state.py`: launch/pending/reconcile/write-go,
-result/writer-release/await/accept/advance, block/stop, review-reserve/complete,
-gate/done, revise/transfer. Это source-fixture reference; target project не обязан
+result/writer-release, await или verify, accept/advance, stage-accept/
+stage-advance/stage-reject, block/stop, review-reserve/complete, gate/done,
+revise/transfer. Это source-fixture reference; target project не обязан
 копировать validator. Произвольного JSON patch события нет.
 
 ## App dispatch и bounded context
@@ -188,7 +260,7 @@ checkpoint, когда соответствующее поручение вла�
    schema; dirty baseline не обещай автоматически скопированным.
 2. Context pack: coordinator/root/ledger/lock identity; ticket/attempt/marker;
    exact current ticket и нужные spec/ADR sections/revisions/hashes; applicable
-   AGENTS/charter и профильная memory; узкие Accepted dependency receipts; physical
+   AGENTS/charter и профильная memory; узкие Verified/Accepted dependency receipts; physical
    repo/worktree/base/index/staged/dirty inventory; write scope/git permissions;
    gates/budget и stop conditions. Не передавай все tickets/transcripts/raw logs.
    Worker может читать необходимый код; shared contracts/ledger/queue пишет только
@@ -243,7 +315,7 @@ Crash после reservation оставляет consumed budget и reserved proo
 не нового запуска; reserved/FAILED/CHANGES_REQUESTED не закрывают review gate.
 
 Исполнимый порядок: observed quiescence + checked candidate → reserve → reviewer
-→ complete → result с completed review ID → formal writer-release → await.
+→ complete → result с completed review ID → formal writer-release → verify (legacy: await).
 Receipt.review содержит id/verdict/evidence/findings. Для required review guard
 принимает только completed APPROVED exact source/result/write-go/attempt binding.
 CHANGES_REQUESTED оформляется как unaccepted result/release/Blocked; новое bounded
@@ -278,18 +350,19 @@ evidence новой ready boundary. Producer obligations сохраняются,
 перестроения стадий/gates в валидный план. Оригинальные plans/decisions/receipts
 сохраняются, affected approvals устаревают, gate proofs требуют нового plan hash.
 
-Queue satisfaction отдельно допускает validated Deferred; technical readiness
-требует Accepted producers. Stage/final completion также требует Accepted actual
-required owners, gates и всех live obligations. Deferred сам не Accepted.
-Transfer не advance: current остается до отдельного решения; revision может
-rewind к более раннему stale predecessor, но не запускает следующий чат.
+Queue satisfaction отдельно допускает validated Deferred. Technical readiness
+требует Verified или Accepted producer по режиму запуска. Stage/final completion
+проверяет живые обязательства, gates и нужные решения владельца.
+Transfer не запускает работу. В поэтапном режиме новый plan hash требует заново
+пройти границы этапов по порядку. Применяй scoped reuse к неизменившимся тикетам.
+Для legacy revision может вернуть очередь к более раннему stale predecessor.
 
-Whole spec/ADR hash меняет source identity всех tickets. Для unchanged Accepted
+Whole spec/ADR hash меняет source identity всех tickets. Для unchanged Verified/Accepted
 predecessor coordinator может передать explicit scoped reuse: original
 attempt/plan/source/receipt/result/release hashes, target plan, observed snapshot,
 verified archived sources и semantic evidence. Guard сравнивает неизменный ticket
 contract/AC/dependencies/stage/workspace и declared spec/ADR bytes (offsets могут
-сдвинуться), проверяет historical acceptance/review/release и сохранность всех
+сдвинуться), проверяет historical verification/acceptance/review/release и сохранность всех
 файлов, измененных тем attempt. Архив сохраняет original hash; старый REF/receipt/
 owner decision не retarget-ится. Source/result drift, affected scope или отсутствие
 proof дают fail-closed invalidation/new attempt. Полнота declared sections и
@@ -300,4 +373,4 @@ Existing self-check вызывает real CLI в disposable roots с cleanup. Sc
 App/role outcomes и actor/path/capability trace показывают только заданный protocol;
 они не доказывают фактическое исполнение skill агентом, реальные App permissions/
 recovery или физическую остановку writers. Live normal/failure/singleton gate —
-отдельная приемка T06; static/scripted PASS его не закрывает.
+отдельная проверка живого Codex App для точного кандидата. CLI PASS её не закрывает.

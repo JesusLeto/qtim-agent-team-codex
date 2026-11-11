@@ -108,6 +108,13 @@ def shape(value, spec):
         spec(value)
 
 
+def optional_fields(required, **optional):
+    def validate(value):
+        need(type(value) is dict, "expected object")
+        shape(value, {**required, **{k: spec for k, spec in optional.items() if k in value}})
+    return validate
+
+
 REF = {"path": relative, "sha256": SHA}
 SOURCE = {"revision": positive, "file": REF}
 OWNER = {"thread": text, "host": text}
@@ -120,15 +127,15 @@ SNAPSHOT = {"patch": REF, "files": [FILE], "untracked": [FILE], "sha256": SHA}
 WORKSPACE = {"repository": text, "worktree": absolute, "base": COMMIT,
              "write_paths": [relative], "git_actions": [{"commit", "push", "integrate", "merge", "release", "deploy"}]}
 SPAN = {"start": number, "end": positive}
-TASK = {"id": TICKET, "stage": STAGE, "source": SOURCE, "requires": [TICKET],
+TASK = optional_fields({"id": TICKET, "stage": STAGE, "source": SOURCE, "requires": [TICKET],
         "scope": {"spec": [SPAN], "adr": [SPAN]},
-        "acs": [{"id": AC, "feature_acs": [FEATURE_AC], "required": bool}], "review_required": bool}
-PLAN = {"spec": SOURCE, "adr": (SOURCE,), "feature_acs": [FEATURE_AC], "queue": [TICKET],
+        "acs": [{"id": AC, "feature_acs": [FEATURE_AC], "required": bool}], "review_required": bool}, owner_stop={"condition": text, "decision": text})
+PLAN = optional_fields({"spec": SOURCE, "adr": (SOURCE,), "feature_acs": [FEATURE_AC], "queue": [TICKET],
         "tickets": [TASK], "stages": [{"id": STAGE, "required": [TICKET], "gates": [text]}],
-        "final_gates": [text], "workspaces": [WORKSPACE], "input": SNAPSHOT}
+        "final_gates": [text], "workspaces": [WORKSPACE], "input": SNAPSHOT}, acceptance={"stage"})
 BUDGET = {"full_limit": positive, "fix_limit": number, "full_used": number, "fix_used": number}
 PEER = {"thread": text, "host": text}
-INTENT = {"marker": text, "project": text, "context_sha256": SHA, "decision": DECISION}
+INTENT = {"marker": text, "project": text, "context_sha256": SHA, "decision": (DECISION,)}
 BINDING = {"marker": text, "project": text, "context_sha256": SHA, "peer": PEER}
 RELEASE = {"peer": PEER, "handles": [text], "verified_stopped": bool,
            "worker_turn_finished": bool, "evidence": REF, "result": SNAPSHOT,
@@ -140,14 +147,20 @@ RECEIPT = {"revision": positive, "file": REF, "ticket": TICKET, "attempt": posit
            "checks": [{"command": text, "exit_code": number, "evidence": REF}],
            "review": {"id": (text,), "verdict": {"APPROVED", "NOT_REQUIRED", "CHANGES_REQUESTED", "FAILED"}, "evidence": REF,
                       "findings": [{"id": text, "disposition": {"fixed", "rejected"}, "evidence": REF}]}}
-ATTEMPT = {"ticket": TICKET, "number": positive,
-           "state": {"Launching", "Running", "Awaiting acceptance", "Accepted", "Blocked", "Stopped", "Deferred"},
+VERIFICATION = {"stop": bool, "evidence": REF}
+SATISFIED = {"Accepted", "Verified"}
+ATTEMPT = optional_fields({"ticket": TICKET, "number": positive,
+           "state": {"Launching", "Running", "Awaiting acceptance", "Accepted", "Verified", "Blocked", "Stopped", "Deferred"},
            "plan_sha256": SHA, "source_sha256": SHA, "intent": INTENT, "input": SNAPSHOT, "workspaces": [WORKSPACE],
            "dependencies": [{"ticket": TICKET, "source_sha256": SHA, "receipt": REF, "result_sha256": SHA}],
            "pending": (text,), "peer": (PEER,),
            "preflight": (REF,), "write_go": (text,), "receipt": (RECEIPT,),
-           "release": (RELEASE,), "acceptance": (DECISION,)}
-GATE = {"stage": (STAGE,), "id": text, "plan_sha256": SHA, "evidence": REF}
+           "release": (RELEASE,), "acceptance": (DECISION,)}, verification=VERIFICATION)
+GATE = optional_fields({"stage": (STAGE,), "id": text, "plan_sha256": SHA, "evidence": REF}, result_sha256=SHA)
+FAILED_GATE = {"id": text, "evidence": REF}
+STAGE_DECISION = optional_fields({"stage": STAGE, "plan_sha256": SHA, "result_sha256": SHA,
+                                  "action": {"accept", "accept-and-advance", "advance", "reject"},
+                                  "target": (TICKET,), "decision": DECISION}, failed_gate=FAILED_GATE)
 HISTORY = {"sequence": number, "event": text, "ticket": (TICKET,), "attempt": (positive,),
            "from": text, "to": text, "reason": text, "payload_sha256": SHA}
 ENDPOINT = {"ticket": TICKET, "ac": AC}
@@ -172,11 +185,11 @@ REVIEW = {"id": text, "phase": {"reserved", "completed"}, "kind": {"full", "fix"
           "candidate": SNAPSHOT, "pools": [text], "binding_sha256": SHA, "quiescence": REF,
           "verdict": ({"APPROVED", "CHANGES_REQUESTED", "FAILED"},),
           "evidence": (REF,), "observation": (REF,)}
-STATE = {"schema": {SCHEMA}, "authority": AUTHORITY, "sequence": number, "plan": PLAN,
+STATE = optional_fields({"schema": {SCHEMA}, "authority": AUTHORITY, "sequence": number, "plan": PLAN,
          "current": (TICKET,), "attempts": [ATTEMPT], "budgets": mapping(BUDGET),
          "ticket_pools": mapping([text]), "reviews": [REVIEW], "plans": mapping(PLAN),
          "changes": [CHANGE], "deferred": mapping(SHA),
-         "gates": [GATE], "decisions": [DECISION], "history": [HISTORY], "done": bool}
+         "gates": [GATE], "decisions": [DECISION], "history": [HISTORY], "done": bool}, stage_decisions=[STAGE_DECISION])
 
 
 def digest(data):
@@ -311,6 +324,8 @@ def snapshot(root, plan, value, check_files=True, scope=False):
 def validate_plan(root, plan):
     shape(plan, PLAN)
     table = tasks(plan)
+    need(plan.get("acceptance") == "stage" or not any("owner_stop" in t for t in table.values()),
+         "ticket owner stop requires stage acceptance")
     need(table and plan["queue"] and plan["workspaces"], "empty execution plan")
     unique([t["id"] for t in plan["tickets"]], "ticket")
     unique(plan["queue"], "queue ticket")
@@ -384,14 +399,15 @@ def dependencies(state, ticket):
     return result
 
 
-def accepted(state, ticket):
+def ticket_ready(state, ticket):
     attempt = last(state, ticket)
     reused = any(r["ticket"] == ticket and r["accepted_attempt"] == attempt["number"]
                  for c in state["changes"] if c["to_plan"] == identity(state["plan"])
                  for r in c["reuse"]) if attempt else False
-    return bool(attempt and attempt["state"] == "Accepted" and attempt["acceptance"]
+    return bool(attempt and attempt["state"] in SATISFIED
+                and (attempt["verification"] if attempt["state"] == "Verified" else attempt["acceptance"])
                 and (attempt["source_sha256"] == source_identity(state["plan"], ticket) or reused)
-                and all(accepted(state, t) for t in tasks(state["plan"])[ticket]["requires"])
+                and all(ticket_ready(state, t) for t in tasks(state["plan"])[ticket]["requires"])
                 and attempt["dependencies"] == dependencies(state, ticket))
 
 
@@ -401,7 +417,7 @@ def current_state(state):
     attempt = last(state)
     if state["current"] in state["deferred"]:
         return "Deferred"
-    if attempt and attempt["state"] == "Accepted" and not accepted(state, attempt["ticket"]):
+    if attempt and attempt["state"] in SATISFIED and not ticket_ready(state, attempt["ticket"]):
         return "Blocked"
     return attempt["state"] if attempt else "Planned"
 
@@ -464,6 +480,9 @@ def receipt(root, state, attempt, historical=False):
              and proof["write_go"] == attempt["write_go"] and proof["source_sha256"] == value["source_sha256"]
              and proof["candidate"]["sha256"] == value["result"]["sha256"] and proof["evidence"] == value["review"]["evidence"],
              "required completed independent review missing/stale", "blocked")
+    elif plan.get("acceptance") == "stage":
+        need(value["review"]["verdict"] == "NOT_REQUIRED" and value["review"]["id"] is None,
+             "unverified review verdict", "blocked")
     verify_ref(root, value["review"]["evidence"])
     for finding in value["review"]["findings"]:
         verify_ref(root, finding["evidence"])
@@ -508,6 +527,7 @@ def endpoint(value):
 
 
 def conserve(root, old, new, moves, dependency_remaps, stage_remaps, gate_remaps, prior_links=None):
+    need(old.get("acceptance") == new.get("acceptance"), "acceptance mode cannot change in an existing run", "blocked")
     prior, table = tasks(old), tasks(new)
     need(set(prior) <= set(table), "stable ticket IDs cannot be removed", "blocked")
     need(set(old["feature_acs"]) <= set(new["feature_acs"]), "feature obligation removed", "blocked")
@@ -612,7 +632,7 @@ def validate_reuse(root, state, proof, check_files=True):
     verify_ref(root, proof["evidence"])
     ticket = proof["ticket"]
     attempt = last(state, ticket)
-    need(attempt is not None and attempt["state"] == "Accepted" and attempt["acceptance"] is not None
+    need(attempt is not None and attempt["state"] in SATISFIED
          and attempt["number"] == proof["accepted_attempt"] and attempt["plan_sha256"] == proof["accepted_plan_sha256"]
          and attempt["source_sha256"] == proof["accepted_source_sha256"] and attempt["receipt"]["file"] == proof["receipt"]
          and attempt["receipt"]["result"]["sha256"] == proof["result_sha256"]
@@ -632,7 +652,7 @@ def validate_reuse(root, state, proof, check_files=True):
     need(source_slices(root, origin, old, proof["archived_sources"]) == source_slices(root, target, new, []),
          "declared source scope changed", "blocked")
     receipt(root, state, attempt, historical=True)
-    decision(root, attempt["acceptance"], identity(attempt["receipt"]))
+    verify_ticket_decision(root, attempt)
     snapshot(root, target, proof["observed"], check_files=check_files)
     baseline = {(f["workspace"], f["path"]): f for f in attempt["input"]["files"]}
     output = {(f["workspace"], f["path"]): f for f in proof["observed"]["files"]}
@@ -650,7 +670,7 @@ def validate_reuse(root, state, proof, check_files=True):
 
 
 def queue_satisfied(state, ticket):
-    return accepted(state, ticket) or ticket in state["deferred"]
+    return ticket_ready(state, ticket) or ticket in state["deferred"]
 
 
 def live_tickets(state):
@@ -671,7 +691,7 @@ def change_plan(root, state, payload):
     if mode == "revise":
         need(not payload["moves"] and set(tasks(old)) == set(tasks(new)), "membership/moves require transfer", "blocked")
     else:
-        need(current is not None and not accepted(state, current) and current not in state["deferred"], "transfer requires current unfinished scope", "blocked")
+        need(current is not None and not ticket_ready(state, current) and current not in state["deferred"], "transfer requires current unfinished scope", "blocked")
         need(payload["moves"] and all(m["from"]["ticket"] == current for m in payload["moves"]), "transfer only current ticket obligations", "blocked")
         remaining = [a for a in tasks(new)[current]["acs"] if a["required"]]
         need(bool(remaining) == (mode == "partial"), "partial/defer remaining scope mismatch", "blocked")
@@ -701,10 +721,14 @@ def change_plan(root, state, payload):
         need(proof["target_plan_sha256"] == identity(new), "reuse target plan mismatch", "blocked")
         need(not state["attempts"] or proof["observed"] == state["attempts"][-1]["release"]["result"], "reuse observed differs from released handoff", "blocked")
         validate_reuse(root, state, proof)
+        need(ticket_ready(state, proof["ticket"]), "reuse prerequisite changed", "blocked")
     # Revisions can rewind invalidated prerequisites; advancing still needs a separate decision.
     end = new["queue"].index(current) + 1 if current is not None else len(new["queue"])
     earlier = next((t for t in new["queue"][:end] if t != current and not queue_satisfied(state, t)), None)
-    state["current"] = earlier or current or next((t for t in new["queue"] if not queue_satisfied(state, t)), new["queue"][-1])
+    if new.get("acceptance") == "stage":
+        state["current"] = stage_entry(state, new["stages"][0]["id"])
+    else:
+        state["current"] = earlier or current or next((t for t in new["queue"] if not queue_satisfied(state, t)), new["queue"][-1])
     state["decisions"].append(change["decision"])
 
 
@@ -713,6 +737,19 @@ def validate_state(root, state, authority, check_reuse=True):
     need(state["authority"] == authority, "canonical authority/owner mismatch", "conflict")
     validate_plan(root, state["plan"])
     table = tasks(state["plan"])
+    need(("stage_decisions" in state) == (state["plan"].get("acceptance") == "stage"), "invalid stage decision ledger")
+    for record in state.get("stage_decisions", []):
+        plan = state["plans"].get(record["plan_sha256"])
+        stage = next((x for x in plan["stages"] if x["id"] == record["stage"]), None) if plan else None
+        need(plan is not None and plan.get("acceptance") == "stage" and stage is not None
+             and ("failed_gate" not in record
+                  or (record["action"] == "reject" and record["failed_gate"]["id"] in stage["gates"]))
+             and (record["target"] is None or record["target"] in tasks(plan))
+             and record["decision"] in state["decisions"]
+             and record["decision"]["scope_sha256"] == stage_decision_scope(record), "invalid stored stage decision")
+    for gate in state["gates"]:
+        plan = state["plans"].get(gate["plan_sha256"])
+        need(plan is not None and ("result_sha256" in gate) == (plan.get("acceptance") == "stage"), "invalid gate binding")
     need(state["current"] is None or state["current"] in table, "invalid current ticket")
     need(identity(state["plan"]) in state["plans"] and state["plans"][identity(state["plan"])] == state["plan"], "unregistered current plan")
     for key, plan in state["plans"].items():
@@ -780,10 +817,19 @@ def validate_state(root, state, authority, check_reuse=True):
         if attempt["release"] is not None:
             need(attempt["release"]["peer"] == attempt["peer"] and attempt["release"]["write_go"] == attempt["write_go"],
                  "inconsistent stored release")
-        if attempt["state"] in {"Running", "Awaiting acceptance", "Accepted"}:
+        stage_mode = state["plans"][attempt["plan_sha256"]].get("acceptance") == "stage"
+        need(stage_mode or attempt["intent"]["decision"] is not None, "legacy launch without owner decision")
+        need(stage_mode or (attempt["state"] != "Verified" and "verification" not in attempt),
+             "legacy attempt with stage verification")
+        if stage_mode and attempt["state"] in SATISFIED | {"Awaiting acceptance"}:
+            verification = attempt.get("verification")
+            need(verification is not None and verification["stop"] == (attempt["state"] != "Verified")
+                 and (not verification["stop"] or "owner_stop" in tasks(state["plans"][attempt["plan_sha256"]])[ticket]),
+                 "state without matching technical verification")
+        if attempt["state"] in SATISFIED | {"Running", "Awaiting acceptance"}:
             need(attempt["peer"] is not None and attempt["preflight"] is not None
                  and attempt["write_go"] is not None, "state without bound preflight/write-go")
-        if attempt["state"] in {"Awaiting acceptance", "Accepted"}:
+        if attempt["state"] in SATISFIED | {"Awaiting acceptance"}:
             need(attempt["receipt"] is not None and attempt["release"] is not None, "state without receipt/release")
         if attempt["state"] == "Accepted":
             need(attempt["acceptance"] is not None and attempt["acceptance"] in state["decisions"], "state without recorded owner acceptance")
@@ -797,8 +843,14 @@ def validate_state(root, state, authority, check_reuse=True):
         for change in state["changes"]:
             if change["to_plan"] == identity(state["plan"]):
                 for proof in change["reuse"]:
+                    if state["plan"].get("acceptance") == "stage":
+                        ticket = proof["ticket"]
+                        attempt = last(state, ticket)
+                        # A repair can supersede this attempt or invalidate its dependencies.
+                        if attempt is None or attempt["number"] != proof["accepted_attempt"] or not ticket_ready(state, ticket):
+                            continue
                     validate_reuse(root, state, proof, check_files=False)
-                    need(all(accepted(state, t) for t in table[proof["ticket"]]["requires"])
+                    need(all(ticket_ready(state, t) for t in table[proof["ticket"]]["requires"])
                          and last(state, proof["ticket"])["dependencies"] == dependencies(state, proof["ticket"]), "reuse prerequisite changed", "blocked")
 
 
@@ -808,19 +860,195 @@ def decision(root, value, expected):
     need(value["scope_sha256"] == expected, "owner decision scope mismatch", "blocked")
 
 
-def stage_ready(root, state, stage):
+def ticket_decision_scope(attempt):
+    if "verification" in attempt:
+        return identity({"receipt": attempt["receipt"], "verification": attempt["verification"]})
+    return identity(attempt["receipt"])
+
+
+def verify_ticket_decision(root, attempt):
+    if "verification" in attempt:
+        verify_ref(root, attempt["verification"]["evidence"])
+    if attempt["acceptance"] is not None:
+        decision(root, attempt["acceptance"], ticket_decision_scope(attempt))
+
+
+def stage_tickets(state, stage):
+    table = tasks(state["plan"])
+    return [t for t in live_tickets(state) if table[t]["stage"] == stage]
+
+
+def stage_entry(state, stage):
+    tickets = stage_tickets(state, stage)
+    return next((t for t in tickets if not ticket_ready(state, t)), tickets[-1])
+
+
+def result_set(root, state, stage):
+    tickets = stage_tickets(state, stage) if stage is not None else live_tickets(state)
+    need(all(ticket_ready(state, t) for t in tickets), "technical ticket results incomplete or stale", "blocked")
+    results = []
+    for ticket in tickets:
+        attempt = last(state, ticket)
+        value = receipt(root, state, attempt, historical=True)
+        verify_ticket_decision(root, attempt)
+        results.append({"ticket": ticket, "receipt": identity(value), "release": identity(attempt["release"]),
+                        "verification": attempt["verification"], "acceptance": attempt["acceptance"]})
+    return {"plan": identity(state["plan"]), "stage": stage, "results": results}
+
+
+def gate_proofs(root, state, stage, ids, result_sha256=None):
+    proofs = []
+    for gate in ids:
+        match = next((g for g in reversed(state["gates"]) if g["stage"] == stage and g["id"] == gate
+                      and g["plan_sha256"] == identity(state["plan"]) and g.get("result_sha256") == result_sha256), None)
+        need(match is not None, ("stage" if stage else "final") + " gate unproven: " + gate, "blocked")
+        verify_ref(root, match["evidence"])
+        proofs.append(match)
+    return proofs
+
+
+def stage_result(root, state, stage):
+    results = result_set(root, state, stage)
+    definition = next(s for s in state["plan"]["stages"] if s["id"] == stage)
+    return identity({"results": results, "gates": gate_proofs(root, state, stage, definition["gates"], identity(results))})
+
+
+def stage_decision_scope(record):
+    return identity({k: v for k, v in record.items() if k != "decision"})
+
+
+def stage_approval(root, state, stage, result, require_advance=False):
+    actions = {"accept-and-advance", "advance"} if require_advance else {"accept", "accept-and-advance"}
+    record = next((r for r in reversed(state["stage_decisions"]) if r["stage"] == stage
+                   and r["plan_sha256"] == identity(state["plan"]) and r["result_sha256"] == result
+                   and r["action"] in actions | {"reject"}), None)
+    if record is None or record["action"] == "reject":
+        return None
+    decision(root, record["decision"], stage_decision_scope(record))
+    return record
+
+
+def stage_ready(root, state, stage, require_advance=False):
+    if state["plan"].get("acceptance") == "stage":
+        result = stage_result(root, state, stage)
+        need(stage_approval(root, state, stage, result), "stage acceptance missing or stale", "blocked")
+        if require_advance:
+            need(stage_approval(root, state, stage, result, require_advance=True), "next stage not authorized", "blocked")
+        return
     plan = state["plan"]
     definition = next(s for s in plan["stages"] if s["id"] == stage)
-    need(all(accepted(state, t) for t in definition["required"]), "required stage tickets not accepted", "blocked")
+    need(all(ticket_ready(state, t) for t in definition["required"]), "required stage tickets not accepted", "blocked")
     for ticket in definition["required"]:
         # Historical intermediate workspaces may have moved on; their accepted receipt binds the prior result.
         value = last(state, ticket)["receipt"]
         verify_ref(root, value["file"])
-    for gate in definition["gates"]:
-        match = next((g for g in state["gates"] if g["stage"] == stage and g["id"] == gate
-                      and g["plan_sha256"] == identity(plan)), None)
-        need(match is not None, "stage gate unproven: " + gate, "blocked")
-        verify_ref(root, match["evidence"])
+    gate_proofs(root, state, stage, definition["gates"])
+
+
+def next_stage_ticket(state, stage):
+    stages = [s["id"] for s in state["plan"]["stages"]]
+    index = stages.index(stage) + 1
+    return stage_entry(state, stages[index]) if index < len(stages) else None
+
+
+def final_scope(root, state):
+    plan = state["plan"]
+    results = result_set(root, state, None)
+    gates = gate_proofs(root, state, None, plan["final_gates"], identity(results))
+    return {"results": results, "gates": gates,
+            "stages": [stage_result(root, state, s["id"]) for s in plan["stages"]]}
+
+
+def stage_status(root, state):
+    plan = state["plan"]
+    stage = tasks(plan)[state["current"]]["stage"]
+    view = {"stage": stage, "plan_sha256": identity(plan), "gate_result_sha256": None,
+            "result_sha256": None, "accepted": False, "next_ticket": next_stage_ticket(state, stage),
+            "final_gate_result_sha256": None, "done_scope_sha256": None}
+    if not all(ticket_ready(state, t) for t in stage_tickets(state, stage)):
+        return view
+    verify_handoff(root, state)
+    view["gate_result_sha256"] = identity(result_set(root, state, stage))
+    if state["current"] != stage_tickets(state, stage)[-1]:
+        return view
+    try:
+        view["result_sha256"] = stage_result(root, state, stage)
+        view["accepted"] = bool(stage_approval(root, state, stage, view["result_sha256"]))
+        if view["accepted"] and view["next_ticket"] is None:
+            for definition in plan["stages"]:
+                stage_ready(root, state, definition["id"])
+            view["final_gate_result_sha256"] = identity(result_set(root, state, None))
+            view["done_scope_sha256"] = identity(final_scope(root, state))
+    except GuardError as err:
+        if err.code != "blocked":
+            raise
+        view["blocked"] = str(err)
+    return view
+
+
+def decide_stage(root, state, payload):
+    plan = state["plan"]
+    ticket = state["current"]
+    need(plan.get("acceptance") == "stage" and ticket is not None, "no active stage acceptance", "blocked")
+    stage = tasks(plan)[ticket]["stage"]
+    tickets = stage_tickets(state, stage)
+    need(ticket == tickets[-1], "current ticket is not at the stage boundary", "blocked")
+    verify_handoff(root, state)
+    event = payload["event"]
+    action = event[len("stage-"):]
+    failed_gate = payload.get("failed_gate")
+    if failed_gate is not None:
+        definition = next(s for s in plan["stages"] if s["id"] == stage)
+        need(failed_gate["id"] in definition["gates"], "unknown failed stage gate")
+        verify_ref(root, failed_gate["evidence"])
+        result = identity(result_set(root, state, stage))
+    else:
+        result = stage_result(root, state, stage)
+    target = None
+    if event == "stage-accept" and payload["advance"]:
+        action = "accept-and-advance"
+    if action in {"accept", "accept-and-advance"}:
+        need(stage_approval(root, state, stage, result) is None, "stage already accepted", "conflict")
+    if action == "advance":
+        need(stage_approval(root, state, stage, result) is not None, "stage acceptance missing or stale", "blocked")
+    if action in {"advance", "accept-and-advance"}:
+        target = next_stage_ticket(state, stage)
+        need(target is not None, "no next stage", "blocked")
+    elif action == "reject":
+        target = payload["repair"]
+        need(target in tickets, "repair ticket outside the current stage", "blocked")
+    record = {"stage": stage, "plan_sha256": identity(plan), "result_sha256": result,
+              "action": action, "target": target, "decision": payload["decision"]}
+    if failed_gate is not None:
+        record["failed_gate"] = failed_gate
+    decision(root, record["decision"], stage_decision_scope(record))
+    state["stage_decisions"].append(record)
+    state["decisions"].append(record["decision"])
+    if action == "reject":
+        for ticket in tickets[tickets.index(target):]:
+            last(state, ticket)["state"] = "Blocked"
+    if target is not None:
+        state["current"] = target
+
+
+def verify_launch_prerequisites(root, state, ticket):
+    plan = state["plan"]
+    stage_mode = plan.get("acceptance") == "stage"
+    position = plan["queue"].index(ticket)
+    need(all(queue_satisfied(state, t) for t in plan["queue"][:position]), "queue predecessor not accepted/deferred", "blocked")
+    task = tasks(plan)[ticket]
+    if stage_mode:
+        for t in plan["queue"][:position]:
+            if t not in state["deferred"] and tasks(plan)[t]["stage"] == task["stage"]:
+                prior = last(state, t)
+                receipt(root, state, prior, historical=True)
+                verify_ticket_decision(root, prior)
+    for predecessor in task["requires"]:
+        need(ticket_ready(state, predecessor), "technical prerequisite not accepted", "blocked")
+        verify_ref(root, last(state, predecessor)["receipt"]["file"])
+    stages = [s["id"] for s in plan["stages"]]
+    for stage in stages[:stages.index(task["stage"])]:
+        stage_ready(root, state, stage, require_advance=stage_mode)
 
 
 def apply(root, state, payload):
@@ -830,6 +1058,7 @@ def apply(root, state, payload):
     ticket = state["current"]
     attempt = last(state)
     before = current_state(state)
+    stage_mode = plan.get("acceptance") == "stage"
     common = {"event": {event}}
     schemas = {
         "launch": {"intent": INTENT, "input": SNAPSHOT, "restart": bool},
@@ -839,12 +1068,17 @@ def apply(root, state, payload):
         "block": {"reason": text},
         "result": {"receipt": RECEIPT},
         "writer-release": {"release": RELEASE},
-        "await": {}, "accept": {"decision": DECISION}, "advance": {"decision": DECISION},
+        "await": {}, "verify": VERIFICATION, "accept": {"decision": DECISION},
+        "advance": {} if stage_mode else {"decision": DECISION},
+        "stage-accept": {"decision": DECISION, "advance": bool},
+        "stage-advance": {"decision": DECISION},
+        "stage-reject": {"decision": DECISION, "repair": TICKET,
+                         **({"failed_gate": FAILED_GATE} if "failed_gate" in payload else {})},
         "stop": {"decision": DECISION},
         "review-reserve": {"id": text, "kind": {"full", "fix"}, "candidate": SNAPSHOT, "quiescence": REF},
         "review-complete": {"id": text, "binding_sha256": SHA,
                             "verdict": {"APPROVED", "CHANGES_REQUESTED", "FAILED"}, "evidence": REF, "observation": REF},
-        "gate": {"stage": (STAGE,), "id": text, "evidence": REF},
+        "gate": {"stage": (STAGE,), "id": text, "evidence": REF, **({"result_sha256": SHA} if stage_mode else {})},
         "done": {"decision": DECISION},
         "revise": CHANGE_FIELDS,
         "transfer": {**CHANGE_FIELDS, "mode": {"partial", "defer"}},
@@ -862,16 +1096,11 @@ def apply(root, state, payload):
         else:
             need(not payload["restart"], "restart without attempt")
         verify_handoff(root, state)
-        position = plan["queue"].index(ticket)
-        need(all(queue_satisfied(state, t) for t in plan["queue"][:position]), "queue predecessor not accepted/deferred", "blocked")
-        task = tasks(plan)[ticket]
-        for predecessor in task["requires"]:
-            need(accepted(state, predecessor), "technical prerequisite not accepted", "blocked")
-            verify_ref(root, last(state, predecessor)["receipt"]["file"])
-        stages = [s["id"] for s in plan["stages"]]
-        for stage in stages[:stages.index(task["stage"])]:
-            stage_ready(root, state, stage)
+        verify_launch_prerequisites(root, state, ticket)
         snapshot(root, plan, payload["input"])
+        if stage_mode and state["attempts"]:
+            need(payload["input"] == state["attempts"][-1]["release"]["result"],
+                 "launch input differs from released handoff", "blocked")
         if not state["attempts"]:
             need(payload["input"] == plan["input"], "initial input mismatch", "blocked")
         intent = payload["intent"]
@@ -879,7 +1108,10 @@ def apply(root, state, payload):
                              "source_sha256": source_identity(plan, ticket), "input": payload["input"],
                              "marker": intent["marker"], "project": intent["project"],
                              "context_sha256": intent["context_sha256"]})
-        decision(root, intent["decision"], expected)
+        if stage_mode and before != "Stopped":
+            need(intent["decision"] is None, "stage launch uses existing stage authorization")
+        else:
+            decision(root, intent["decision"], expected)
         need(all(a["intent"]["marker"] != intent["marker"] for a in state["attempts"]), "reused launch marker")
         attempt = {"ticket": ticket, "number": sum(a["ticket"] == ticket for a in state["attempts"]) + 1,
                    "state": "Launching", "plan_sha256": identity(plan), "source_sha256": source_identity(plan, ticket), "intent": intent,
@@ -887,7 +1119,8 @@ def apply(root, state, payload):
                    "pending": None, "peer": None, "preflight": None, "write_go": None,
                    "receipt": None, "release": None, "acceptance": None}
         state["attempts"].append(attempt)
-        state["decisions"].append(intent["decision"])
+        if intent["decision"] is not None:
+            state["decisions"].append(intent["decision"])
         dispatch = {"marker": intent["marker"], "project": intent["project"],
                     "context_sha256": intent["context_sha256"]}
     elif event in {"pending", "reconcile"}:
@@ -911,6 +1144,9 @@ def apply(root, state, payload):
         need(attempt is not None and before in {"Launching", "Blocked"} and attempt["peer"] is not None,
              "bound preflight required", "blocked")
         need(attempt["source_sha256"] == source_identity(plan, ticket), "stale launch source", "blocked")
+        if stage_mode:
+            need("verification" not in attempt, "verified attempt needs a fresh repair launch", "blocked")
+            verify_launch_prerequisites(root, state, ticket)
         if attempt["write_go"] is not None:
             released(root, state, attempt)
         need(not any(r["phase"] == "reserved" for r in state["reviews"]), "unresolved review reservation", "blocked")
@@ -921,7 +1157,7 @@ def apply(root, state, payload):
              "preflight input differs from launch/released result", "blocked")
         attempt.update(state="Running", preflight=payload["preflight"], write_go=payload["id"], receipt=None, release=None, acceptance=None)
     elif event == "block":
-        need(attempt is not None and before not in {"Accepted", "Stopped"}, "cannot block current state")
+        need(attempt is not None and before not in SATISFIED | {"Stopped"}, "cannot block current state")
         attempt["state"] = "Blocked"
     elif event == "result":
         need(attempt is not None and before == "Running" and attempt["release"] is None, "result needs current running writer", "blocked")
@@ -935,34 +1171,49 @@ def apply(root, state, payload):
         need(attempt is not None and before in {"Running", "Blocked", "Stopped", "Launching"}, "release unavailable")
         attempt["release"] = payload["release"]
         released(root, state, attempt)
-    elif event == "await":
+    elif event in {"await", "verify"}:
+        need(stage_mode == (event == "verify"), "wrong verification event for acceptance mode", "blocked")
         need(attempt is not None and before == "Running", "not running", "blocked")
         receipt(root, state, attempt)
-        attempt["state"] = "Awaiting acceptance"
+        if stage_mode:
+            need(not payload["stop"] or "owner_stop" in tasks(plan)[ticket], "undeclared owner stop", "blocked")
+            verify_ref(root, payload["evidence"])
+            attempt["verification"] = {k: payload[k] for k in VERIFICATION}
+        attempt["state"] = "Awaiting acceptance" if not stage_mode or payload["stop"] else "Verified"
     elif event == "accept":
         need(attempt is not None and before == "Awaiting acceptance", "not awaiting acceptance", "blocked")
-        value = receipt(root, state, attempt)
-        decision(root, payload["decision"], identity(value))
+        receipt(root, state, attempt)
+        verify_ticket_decision(root, attempt)
+        decision(root, payload["decision"], ticket_decision_scope(attempt))
         attempt.update(state="Accepted", acceptance=payload["decision"])
         state["decisions"].append(payload["decision"])
     elif event == "advance":
         need(ticket is not None and queue_satisfied(state, ticket), "current ticket not accepted/deferred", "blocked")
         verify_handoff(root, state)
-        if accepted(state, ticket):
-            receipt(root, state, attempt, historical=attempt["source_sha256"] != source_identity(plan, ticket))
+        if ticket_ready(state, ticket):
+            receipt(root, state, attempt, historical=attempt is not state["attempts"][-1]
+                    or attempt["source_sha256"] != source_identity(plan, ticket))
+            if stage_mode:
+                verify_ticket_decision(root, attempt)
         position = plan["queue"].index(ticket)
         target = next((t for t in plan["queue"][position + 1:] if t not in state["deferred"]), None)
         need(target is not None, "no next ticket")
-        decision(root, payload["decision"], identity({"from": ticket, "to": target, "plan": identity(plan)}))
+        if stage_mode:
+            need(tasks(plan)[ticket]["stage"] == tasks(plan)[target]["stage"], "stage boundary requires owner acceptance and advance", "blocked")
+        else:
+            decision(root, payload["decision"], identity({"from": ticket, "to": target, "plan": identity(plan)}))
         for prerequisite in tasks(plan)[target]["requires"]:
-            need(accepted(state, prerequisite), "technical prerequisite not accepted", "blocked")
+            need(ticket_ready(state, prerequisite), "technical prerequisite not accepted", "blocked")
         stages = [s["id"] for s in plan["stages"]]
         for stage in stages[:stages.index(tasks(plan)[target]["stage"])]:
             stage_ready(root, state, stage)
         state["current"] = target
-        state["decisions"].append(payload["decision"])
+        if not stage_mode:
+            state["decisions"].append(payload["decision"])
+    elif event in {"stage-accept", "stage-advance", "stage-reject"}:
+        decide_stage(root, state, payload)
     elif event == "stop":
-        need(attempt is not None and before != "Accepted", "no stoppable attempt")
+        need(attempt is not None and before not in SATISFIED, "no stoppable attempt")
         decision(root, payload["decision"], identity({"ticket": ticket, "attempt": attempt["number"], "source": attempt["source_sha256"]}))
         attempt["state"] = "Stopped"
         state["decisions"].append(payload["decision"])
@@ -1004,19 +1255,31 @@ def apply(root, state, payload):
         need((definitions is not None and payload["id"] in definitions["gates"])
              or (stage is None and payload["id"] in plan["final_gates"]), "unknown gate")
         required = definitions["required"] if stage else live_tickets(state)
-        need(all(accepted(state, t) for t in required), "gate tickets not accepted", "blocked")
-        need(not any(g["stage"] == stage and g["id"] == payload["id"] and g["plan_sha256"] == identity(plan) for g in state["gates"]), "gate already recorded")
-        state["gates"].append({"stage": stage, "id": payload["id"], "plan_sha256": identity(plan), "evidence": payload["evidence"]})
+        need(all(ticket_ready(state, t) for t in required), "gate tickets not accepted", "blocked")
+        gate = {"stage": stage, "id": payload["id"], "plan_sha256": identity(plan), "evidence": payload["evidence"]}
+        if stage_mode:
+            verify_handoff(root, state)
+            need(ticket is not None and (stage is None or tasks(plan)[ticket]["stage"] == stage), "gate outside the current stage", "blocked")
+            if stage is None:
+                for definition in plan["stages"]:
+                    stage_ready(root, state, definition["id"])
+            gate["result_sha256"] = identity(result_set(root, state, stage))
+            need(payload["result_sha256"] == gate["result_sha256"], "stale gate result binding", "blocked")
+        need(not any(all(g.get(k) == gate.get(k) for k in ("stage", "id", "plan_sha256", "result_sha256"))
+                     and (not stage_mode or g["evidence"] == gate["evidence"]) for g in state["gates"]), "gate already recorded")
+        state["gates"].append(gate)
     elif event == "done":
-        need(all(accepted(state, t) for t in live_tickets(state)), "unaccepted feature ticket", "blocked")
+        need(not stage_mode or not state["done"], "feature already done", "conflict")
+        need(all(ticket_ready(state, t) for t in live_tickets(state)), "unaccepted feature ticket", "blocked")
         verify_handoff(root, state)
         for stage in plan["stages"]:
             stage_ready(root, state, stage["id"])
-        for gate in plan["final_gates"]:
-            match = next((g for g in state["gates"] if g["stage"] is None and g["id"] == gate and g["plan_sha256"] == identity(plan)), None)
-            need(match is not None, "final gate unproven", "blocked")
-            verify_ref(root, match["evidence"])
-        decision(root, payload["decision"], identity({"plan": identity(plan), "receipts": [last(state, t)["receipt"]["file"] for t in live_tickets(state)]}))
+        if stage_mode:
+            scope = final_scope(root, state)
+        else:
+            gate_proofs(root, state, None, plan["final_gates"])
+            scope = {"plan": identity(plan), "receipts": [last(state, t)["receipt"]["file"] for t in live_tickets(state)]}
+        decision(root, payload["decision"], identity(scope))
         state.update(done=True, current=None)
         state["decisions"].append(payload["decision"])
     elif event in {"revise", "transfer"}:
@@ -1073,6 +1336,8 @@ def transact(root, authority, args, payload):
                      "history": [{"sequence": 0, "event": "init", "ticket": payload["plan"]["queue"][0],
                                   "attempt": None, "from": "Absent", "to": "Planned", "reason": "owner execution start",
                                   "payload_sha256": identity(payload)}]}
+            if payload["plan"].get("acceptance") == "stage":
+                state["stage_decisions"] = []
         else:
             need(existing is not None, "ledger missing", "blocked")
             state = decode(existing)
@@ -1141,14 +1406,19 @@ def main():
             if attempt is None and state["attempts"]:
                 verify_handoff(root, state)
             elif attempt and attempt["receipt"] is not None:
-                if attempt["state"] in {"Awaiting acceptance", "Accepted"}:
-                    historical = attempt["plan_sha256"] != identity(state["plan"])
+                if attempt["state"] in SATISFIED | {"Awaiting acceptance"}:
+                    historical = attempt["plan_sha256"] != identity(state["plan"]) or attempt is not state["attempts"][-1]
                     receipt(root, state, attempt, historical=historical)
+                    if "verification" in attempt:
+                        verify_ticket_decision(root, attempt)
                     if historical:
                         verify_handoff(root, state)
                 else:
                     verify_ref(root, attempt["receipt"]["file"])
-                    snapshot(root, {"workspaces": attempt["workspaces"], "baseline": attempt["input"]}, attempt["receipt"]["result"], scope=True)
+                    snapshot(root, {"workspaces": attempt["workspaces"], "baseline": attempt["input"]},
+                             attempt["receipt"]["result"], check_files=attempt is state["attempts"][-1], scope=True)
+                    if attempt is not state["attempts"][-1]:
+                        verify_handoff(root, state)
             else:
                 snapshot(root, state["plan"], state["plan"]["input"], check_files=attempt is None)
             try:
@@ -1160,6 +1430,8 @@ def main():
             root.check()
             result = {"ok": True, "state": state, "effective_state": current_state(state), "dispatch": None, "review_dispatch": None,
                       "reconciliation_required": bool(attempt and attempt["state"] in {"Launching", "Blocked"} and attempt["peer"] is None)}
+            if state["plan"].get("acceptance") == "stage" and state["current"] is not None:
+                result["stage"] = stage_status(root, state)
         else:
             shape({"thread": args.owner_thread, "host": args.owner_host}, OWNER)
             if args.command == "transition":

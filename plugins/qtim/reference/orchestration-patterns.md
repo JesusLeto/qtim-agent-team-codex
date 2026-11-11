@@ -29,7 +29,7 @@ topological ff-only promotion и bounded final verification; подробный 
 ## Approved Scope And Phase Autopilot
 
 Для feature-sequential по новому Stage/Ticket плану действует
-[feature-execution.md](feature-execution.md): ticket acceptance и advance принадлежат
+[feature-execution.md](feature-execution.md): проверка тикетов, приёмка этапа и advance принадлежат
 исходному coordinator. Автопилот ниже действует внутри текущего разрешённого тикета;
 он не разрешает переход к следующему. Standalone/team/lazy/mission сохраняют свой
 контракт; адаптация старого плана — по [feature-pipeline.md](feature-pipeline.md).
