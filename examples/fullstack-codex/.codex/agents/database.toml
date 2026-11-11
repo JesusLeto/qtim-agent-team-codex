@@ -1,4 +1,4 @@
-# qtim-version: 2.17.0
+# qtim-version: 2.18.0
 name = "qtim-database"
 description = "Database implementation and review."
 model = "gpt-6-sol"

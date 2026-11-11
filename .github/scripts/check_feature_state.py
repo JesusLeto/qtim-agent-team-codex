@@ -152,6 +152,10 @@ class Fixture:
         intent["decision"] = self.owner_decision(identity({"ticket": ticket, "attempt": number,
                     "source_sha256": self.source(ticket), "input": observed, "marker": intent["marker"],
                     "project": intent["project"], "context_sha256": intent["context_sha256"]}))
+        if self.plan.get("acceptance") == "stage":
+            intent["decision"] = None
+            if state["attempts"] and state["attempts"][-1]["release"]:
+                observed = state["attempts"][-1]["release"]["result"]
         return {"event": "launch", "intent": intent, "input": observed, "restart": restart}
 
     def launch(self, restart=False):
@@ -476,6 +480,204 @@ def complete_feature(f):
     f.bind()
     f.write_go("write-reopened-t01")
     expect(f.state()["budgets"]["RB-T01"]["full_used"] == 1, "reopened scope reset review budget")
+
+
+def stage_acceptance(f, stop, combined):
+    f.plan["acceptance"] = "stage"
+    t2 = f.plan["tickets"][1]
+    t3 = copy.deepcopy(t2)
+    t3.update(id="T03", requires=["T02"], source={"revision": 1, "file": f.ref("tickets/T03.md", "third contract\n")},
+              acs=[{"id": "T03-AC1", "feature_acs": ["AC-03"], "required": True}])
+    t2.update(stage="S1", owner_stop={"condition": "physical device required", "decision": "confirm observation"})
+    f.plan["tickets"].append(t3)
+    f.plan["queue"].append("T03")
+    f.plan["feature_acs"].append("AC-03")
+    f.plan["stages"][0]["required"].append("T02")
+    f.plan["stages"][1]["required"] = ["T03"]
+    f.running()
+    file = f.workspace / "file.txt"
+
+    def verify(name, stop=False, check_failures=False, review_kind=None):
+        file.write_text(name + "\n", encoding="utf-8")
+        value = f.result(name)
+        if review_kind:
+            f.review(value, kind=review_kind)
+        event = {"event": "verify", "stop": stop, "evidence": f.evidence}
+        if check_failures:
+            for verdict in ("FAIL", "BLOCKED"):
+                bad = copy.deepcopy(value)
+                bad["acs"][0]["verdict"] = verdict
+                f.call({"event": "result", "receipt": bad})
+                f.call({"event": "writer-release", "release": f.release(bad)})
+                f.call(event, code=4, contains="mandatory AC")
+                f.call({"event": "advance"}, code=4, contains="current ticket")
+                # A new write-go is required to supersede a formally released result.
+                f.call({"event": "block", "reason": "verification refused"})
+                f.write_go("write-after-" + verdict)
+                value["write_go"] = f.attempt()["write_go"]
+            f.review(value, kind="fix")
+        f.call({"event": "result", "receipt": value})
+        if check_failures:
+            f.call(event, code=4, contains="writer release")
+            f.call({"event": "writer-release", "release": {**f.release(value), "verified_stopped": False}},
+                   code=4, contains="unverified writer release")
+        f.call({"event": "writer-release", "release": f.release(value)})
+        if check_failures:
+            file.write_text("drift\n", encoding="utf-8")
+            f.call(event, code=4, contains="stale workspace file")
+            file.write_text(name + "\n", encoding="utf-8")
+            f.call({**event, "stop": True}, code=4, contains="undeclared owner stop")
+        response = f.call(event)
+        expect(response["state"] == ("Awaiting acceptance" if stop else "Verified"), "technical result took the wrong route")
+        return value
+
+    verify("t01", check_failures=not combined, review_kind="full")
+    owner_decisions = len(f.state()["decisions"])
+    f.call({"event": "advance"})
+    f.launch()
+    expect(f.state()["current"] == "T02" and len(f.state()["decisions"]) == owner_decisions,
+           "same-stage dependent launch introduced an owner decision")
+    f.bind()
+    f.write_go("write-t02")
+    t2_receipt = verify("t02", stop)
+    if stop:
+        f.call({"event": "advance"}, code=4, contains="current ticket")
+        expect(f.call(operation="status")["stage"]["gate_result_sha256"] is None, "manual stop exposed a stage proof")
+        scope = identity({"receipt": t2_receipt, "verification": {"stop": True, "evidence": f.evidence}})
+        f.call({"event": "accept", "decision": f.owner_decision(scope)})
+
+    def stage_command(event, action, view, target=None, **fields):
+        scope = identity({"stage": view["stage"], "plan_sha256": view["plan_sha256"],
+                          "result_sha256": view["result_sha256"], "action": action, "target": target})
+        return {"event": event, "decision": f.owner_decision(scope), **fields}
+
+    view = f.call(operation="status")["stage"]
+    expect(view["result_sha256"] is None, "presented stage before the stage gate")
+    f.call({"event": "advance"}, code=4, contains="stage boundary")
+    gate = {"event": "gate", "stage": "S1", "id": "S1-ready", "evidence": f.evidence,
+            "result_sha256": view["gate_result_sha256"]}
+    f.call(gate)
+    view = f.call(operation="status")["stage"]
+    if not combined:
+        stale = stage_command("stage-accept", "accept", view, advance=False)
+        stale_advance = stage_command("stage-advance", "advance", view, "T03")
+        f.call(stale_advance, code=4, contains="acceptance missing")
+        f.call(stale)
+        expect(f.call(operation="resume")["state"]["current"] == "T02", "accept-only advanced")
+        f.call(stage_command("stage-reject", "reject", view, "T02", repair="T02"))
+        f.call({"event": "advance"}, code=4, contains="current ticket")
+        f.launch(restart=True)
+        f.bind()
+        f.write_go("write-t02-repair")
+        verify("t02-repaired")
+        f.call(stale, code=4, contains="stage gate unproven")
+        f.call(gate, code=4, contains="stale gate result binding")
+        gate["result_sha256"] = f.call(operation="status")["stage"]["gate_result_sha256"]
+        f.call(gate)
+        f.call(stale, code=4, contains="owner decision scope mismatch")
+        view = f.call(operation="status")["stage"]
+        f.call(stage_command("stage-accept", "accept", view, advance=False))
+        f.call(stale_advance, code=4, contains="owner decision scope mismatch")
+        command = stage_command("stage-advance", "advance", view, "T03")
+    else:
+        command = stage_command("stage-accept", "accept-and-advance", view, "T03", advance=True)
+    response = f.call(command)
+    expect(response["dispatch"] is None, "stage decision emitted launch before launch intent")
+    ledger = f.state()
+    resumed = f.call(operation="resume")
+    expect(resumed["state"]["current"] == "T03" and resumed["dispatch"] is None and f.state() == ledger,
+           "resume across stage authorization dispatched or lost the target")
+    f.call(command, code=4, contains="technical ticket results incomplete")
+    launch = f.launch_payload()
+    f.call(launch)
+    f.call(launch, code=3, contains="attempt already launched")
+    expect(len([a for a in f.state()["attempts"] if a["ticket"] == "T03"]) == 1, "repeated command launched twice")
+    f.bind()
+    f.write_go("write-t03")
+    verify("t03")
+    view = f.call(operation="status")["stage"]
+    expect(view["final_gate_result_sha256"] is None, "last stage implicitly accepted")
+    f.call(stage_command("stage-accept", "accept", view, advance=False))
+    view = f.call(operation="status")["stage"]
+    expect(view["done_scope_sha256"] is None and not f.state()["done"], "last stage implicitly completed feature")
+    f.call({"event": "gate", "stage": None, "id": "integration", "evidence": f.evidence,
+            "result_sha256": view["final_gate_result_sha256"]})
+    scope = f.call(operation="status")["stage"]["done_scope_sha256"]
+    expect(f.call({"event": "done", "decision": f.owner_decision(scope)})["state"] == "Done", "explicit final Done failed")
+    expect(f.call(operation="resume")["dispatch"] is None, "terminal resume dispatched")
+    legacy = copy.deepcopy(f.plan)
+    del legacy["acceptance"]
+    del legacy["tickets"][1]["owner_stop"]
+    f.change(legacy, code=4, contains="acceptance mode cannot change")
+    expect(f.state()["done"], "rejected mode switch mutated the ledger")
+
+
+def stage_repair(f, reuse):
+    f.plan["acceptance"] = "stage"
+    producer = "producer invariant\n"
+    spec = producer + "consumer v1\n"
+    f.plan["spec"]["file"] = f.ref("spec.md", spec)
+    f.plan["tickets"][0]["scope"]["spec"] = [{"start": 0, "end": len(producer)}]
+    f.plan["tickets"][1]["scope"]["spec"] = [{"start": len(producer), "end": len(spec)}]
+    f.running()
+
+    def verify(name, kind):
+        (f.workspace / "file.txt").write_text(name + "\n", encoding="utf-8")
+        value = f.result(name)
+        f.review(value, kind=kind)
+        f.call({"event": "result", "receipt": value})
+        f.call({"event": "writer-release", "release": f.release(value)})
+        f.call({"event": "verify", "stop": False, "evidence": f.evidence})
+
+    verify("original", "full")
+    origin = f.attempt()
+    if reuse:
+        revised = copy.deepcopy(f.plan)
+        archive = f.ref("artifacts/spec-r2.md", spec)
+        revised_spec = producer + "consumer v2\n"
+        revised["spec"] = {"revision": 3, "file": f.ref("spec.md", revised_spec)}
+        proof = {"ticket": "T01", "accepted_attempt": origin["number"], "accepted_plan_sha256": origin["plan_sha256"],
+                 "accepted_source_sha256": origin["source_sha256"], "receipt": origin["receipt"]["file"],
+                 "result_sha256": origin["receipt"]["result"]["sha256"], "release_sha256": identity(origin["release"]),
+                 "target_plan_sha256": identity(revised), "observed": origin["release"]["result"],
+                 "archived_sources": [{"original": f.plan["spec"]["file"], "copy": archive}], "evidence": f.evidence}
+        f.change(revised, reuse=[proof])
+    view = f.call(operation="status")["stage"]
+    gate = {"event": "gate", "stage": "S1", "id": "S1-ready", "evidence": f.evidence,
+            "result_sha256": view["gate_result_sha256"]}
+    scope = {"stage": "S1", "plan_sha256": view["plan_sha256"], "action": "reject", "target": "T01"}
+    payload = {"event": "stage-reject", "repair": "T01"}
+    if reuse:
+        f.call(gate)
+        scope["result_sha256"] = f.call(operation="status")["stage"]["result_sha256"]
+    else:
+        f.call({"event": "stage-accept", "advance": True, "decision": f.owner_decision("0" * 64)},
+               code=4, contains="stage gate unproven")
+        failure = {"id": "S1-ready", "evidence": f.ref("failed-gate.md", "integration check failed\n")}
+        scope.update(result_sha256=view["gate_result_sha256"], failed_gate=failure)
+        payload["failed_gate"] = failure
+    payload["decision"] = f.owner_decision(identity(scope))
+    if not reuse:
+        stale = {**scope, "result_sha256": "0" * 64}
+        f.call({**payload, "decision": f.owner_decision(identity(stale))}, code=4, contains="owner decision scope mismatch")
+        before = f.state()
+        expect(not before["gates"] and before["current"] == "T01", "failed-gate repair fabricated PASS or advanced")
+    f.call(payload)
+    state = f.call(operation="resume")["state"]
+    expect(state["current"] == "T01" and state["attempts"][0]["state"] == "Blocked", "rejection did not reopen the stage")
+    expect(state["attempts"][0]["receipt"] == origin["receipt"], "repair rewrote historical receipt")
+    if reuse:
+        expect(state["changes"][-1]["reuse"] == [proof], "repair deleted historical reuse proof")
+    else:
+        expect(not state["gates"] and state["stage_decisions"][-1]["failed_gate"] == failure, "failure recorded as PASS or lost")
+    f.launch(restart=True)
+    f.bind()
+    f.write_go("stage-repair")
+    verify("repaired", "fix")
+    expect(f.attempt()["number"] == 2, "new result did not supersede the rejected attempt")
+    f.call(gate, code=4, contains="stale gate result binding")
+    new_view = f.call(operation="status")["stage"]
+    f.call({**gate, "result_sha256": new_view["gate_result_sha256"]})
 
 
 def output_limit(f):
@@ -950,6 +1152,10 @@ def main():
     cases = [("wrong-owner", wrong_owner), ("schema/paths/I/O", schema_paths), ("two-process race/sequence", race),
              ("durable launch/reconciliation", launch_recovery), ("receipt/release/acceptance/stage", receipts_release),
              ("dirty baseline/scope", dirty_handoff), ("complete feature/final gate", complete_feature),
+             ("stage acceptance/repair/separate", lambda f: stage_acceptance(f, stop=True, combined=False)),
+             ("stage acceptance/combined", lambda f: stage_acceptance(f, stop=False, combined=True)),
+             ("stage repair/reused result", lambda f: stage_repair(f, reuse=True)),
+             ("stage repair/failed gate", lambda f: stage_repair(f, reuse=False)),
              ("serialized output limit", output_limit), ("preflight stop/release", preflight_stop_release), ("stop/restart/review/revision", stop_budget_revision), ("canonical root/lock/corruption", root_lock_corruption),
              ("review-lifecycle", review_lifecycle), ("failed-review", failed_review), ("transfer-pools", transfer_pools), ("deferred-readiness", deferred_readiness),
              ("pool-merge-atomic", pool_merge_atomic), ("scoped-reuse", scoped_reuse), ("reuse-absent", lambda f: scoped_reuse(f, False))]
