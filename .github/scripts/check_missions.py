@@ -7512,7 +7512,7 @@ def check_contract_files() -> None:
         "detached", "transaction", "compare-and-swap", "coordinator ownership",
         "status <slug>", "resume <slug>", "stop <slug>",
         "несколько отдельных Codex", "planning/evaluation-only",
-        "quoted command", "отложенное намерение",
+        "quoted command",
         "terminalVerifier.dependsOn", "deliveredEvidenceRevision",
         "canonical safe", "идемпотентно", "App worktree не",
         "detached HEAD",

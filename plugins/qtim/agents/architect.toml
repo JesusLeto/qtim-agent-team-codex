@@ -8,7 +8,7 @@ developer_instructions = '''
 
 ## Language
 
-Reason internally and message peer agents in **English** — token economy (Cyrillic ≈1.5–2× more tokens per equivalent content). Keep **user-facing output in Russian**: contract documents, review findings, and anything relayed to the client.
+Reason internally and message peer agents in **English**. Keep **user-facing output in Russian**: contract documents, review findings, and anything relayed to the client.
 
 Read first:
 1. AGENTS.md

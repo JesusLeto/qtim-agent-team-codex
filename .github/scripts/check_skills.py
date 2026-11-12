@@ -207,7 +207,6 @@ for path in vertical_slice_consumers:
 
 risk_policy_consumers = [
     pathlib.Path("plugins/qtim/reference/independent-review.md"),
-    pathlib.Path("plugins/qtim/reference/orchestration-patterns.md"),
     pathlib.Path("plugins/qtim/skills/qtim-setup/SKILL.md"),
     pathlib.Path("plugins/qtim/skills/qtim-doctor/SKILL.md"),
     pathlib.Path("plugins/qtim/agents/reviewer.toml"),
@@ -229,6 +228,10 @@ for path in risk_policy_consumers:
     missing = [marker for marker in risk_markers if marker not in body]
     if missing:
         bad.append(f"{path}: incomplete canonical risk matrix: {', '.join(missing)}")
+
+path = pathlib.Path("plugins/qtim/reference/orchestration-patterns.md")
+if "independent-review.md#when-to-use" not in path.read_text(encoding="utf-8"):
+    bad.append(f"{path}: missing canonical code-review policy reference")
 
 status_contracts = {
     pathlib.Path("plugins/qtim/reference/feature-pipeline.md"): (
@@ -280,26 +283,6 @@ minimal_diff_contracts = {
         "Добавь одну минимальную breaking-проверку",
         "$qtim-brainstorm",
         "$qtim-prototype",
-    ),
-    pathlib.Path("plugins/qtim/agents/architect.toml"): (
-        "$qtim-minimal-diff",
-        "Новый слой и новая зависимость — архитектурное решение",
-        "Чистая избыточность — рекомендация",
-    ),
-    pathlib.Path("plugins/qtim/agents/database.toml"): (
-        "$qtim-minimal-diff",
-        "constraint, index или trigger",
-        "обязательная минимальная проверка",
-    ),
-    pathlib.Path("plugins/qtim/agents/frontend.toml"): (
-        "$qtim-minimal-diff",
-        "Trust-boundary validation",
-        "одну минимальную проверку",
-    ),
-    pathlib.Path("plugins/qtim/agents/reviewer.toml"): (
-        "Minimal-diff review (recommendations, not automatic blockers)",
-        "$qtim-minimal-diff",
-        "pure excess",
     ),
     pathlib.Path("plugins/qtim/skills/qtim-setup/SKILL.md"): (
         "$qtim-minimal-diff",

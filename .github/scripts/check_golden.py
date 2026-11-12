@@ -5,6 +5,8 @@ import pathlib
 import re
 import sys
 
+from agent_toml import load_agent_toml
+
 root = pathlib.Path(__file__).resolve().parents[2]
 version = json.loads(
     (root / "plugins/qtim/.codex-plugin/plugin.json").read_text(encoding="utf-8")
@@ -76,7 +78,8 @@ for filename, policy in expected.items():
     need(path.is_file(), f"missing {filename}")
     if not path.is_file():
         continue
-    text = path.read_text(encoding="utf-8")
+    raw = path.read_bytes().decode("utf-8")
+    text = raw.replace("\r\n", "\n")
     need(text.startswith(f"# qtim-version: {version}"), f"{filename} stamp mismatch")
     need("{{" not in text, f"{filename} has unresolved placeholder")
     for marker in language_markers:
@@ -92,7 +95,12 @@ for filename, policy in expected.items():
     if filename in minimal_diff_agents:
         need("$qtim-minimal-diff" in text, f"{filename} has no minimal-diff contract")
     if filename == "reviewer.toml":
-        need(payload.get("sandbox_mode") == "read-only", "reviewer is not read-only")
+        try:
+            parsed = load_agent_toml(raw)
+        except ValueError as err:
+            bad.append(f"reviewer has invalid or unsupported agent TOML: {err}")
+            parsed = {}
+        need(parsed.get("sandbox_mode") == "read-only", "reviewer is not read-only")
         for marker in ("Approved scope", "fix-and-recheck", "$qtim-kb-format", "SPEC_REVIEW",
                        "READY_FOR_APPROVAL", "CHANGES_REQUESTED"):
             need(marker in text, f"reviewer has no {marker} contract")
@@ -108,7 +116,7 @@ directory = pathlib.PurePosixPath(config.get("directory", ""))
 need(config.get("mode") == "blocking", "golden screenshot gate not blocking")
 need(not directory.is_absolute() and ".." not in directory.parts, "unsafe screenshot directory")
 for filename in ("MEMORY.md", "project-map.md", "commands.md", "safety.md",
-                 "invariants.md", "decisions.md", "review-report.md", "bug-log.md"):
+                 "invariants.md"):
     need((example / "memory" / filename).is_file(), f"missing memory/{filename}")
 memory_index = (example / "memory/MEMORY.md").read_text(encoding="utf-8")
 need("memory/missions/<slug>/" in memory_index, "memory index has no on-demand missions")

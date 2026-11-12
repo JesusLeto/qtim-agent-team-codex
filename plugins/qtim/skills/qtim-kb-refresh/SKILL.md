@@ -38,6 +38,8 @@ Pass the `$qtim-kb-format` writer rules to every writer explicitly, along with t
 
 Verify any rewritten or removed claims with fresh context. If a writer or verifier fails, report that file as unverified and do not stamp it. Review the unchanged sample; if several sample claims are wrong, broaden the review only within the authorized budget, otherwise report the remaining risk.
 
+An `open:` defect is retained as active knowledge only in non-archived `memory/*.md`; a copy in a journal, mission or feature artifact does not close `open_lost`.
+
 ## Post-check and report
 
 1. Run `scan` again and `python3 "$KB_SCAN" lost --snapshot <path>`. Inspect every `open_lost` and `candidates` item against the before snapshot and base code. Restore truly lost knowledge. An exact-text candidate may be a valid rewrite, but mark the disposition explicitly. A `shrink_alarm` demands a file-by-file explanation. In lite, growth over 10% calls for compression or a stop with the largest contributors.

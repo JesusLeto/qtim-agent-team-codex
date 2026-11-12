@@ -284,8 +284,8 @@ need(
     "2.14 AGENTS migration changed bytes outside the managed language insertion",
 )
 need(
-    text(LANGUAGE_BEFORE / ".codex/agents/foreign-agent.toml")
-    == text(LANGUAGE_AFTER / ".codex/agents/foreign-agent.toml"),
+    (LANGUAGE_BEFORE / ".codex/agents/foreign-agent.toml").read_bytes()
+    == (LANGUAGE_AFTER / ".codex/agents/foreign-agent.toml").read_bytes(),
     "2.14 migration changed foreign agent bytes",
 )
 
@@ -334,7 +334,7 @@ need(
 )
 for relative in (".codex/agents/foreign-agent.toml", "docs/features/legacy/prd.md"):
     need(
-        foreign_bytes_preserved(text(FEATURE_BEFORE / relative), text(FEATURE_AFTER / relative)),
+        foreign_bytes_preserved((FEATURE_BEFORE / relative).read_bytes(), (FEATURE_AFTER / relative).read_bytes()),
         f"experimental migration changed foreign or legacy bytes: {relative}",
     )
 feature_before_tree = tree_snapshot(FEATURE_BEFORE)
@@ -490,6 +490,10 @@ contract_markers = {
         "единственный multiline `developer_instructions`",
         "одну минимальную breaking check без новой",
         "charter и все qtim role stamps остаются `2.12.0`",
+        "## 2.14.0",
+        "Миграция с 2.13.0",
+        "foreign/ambiguous file не меняй",
+        "stamps всех сопоставленных qtim role TOML до `2.14.0`",
     ),
     ROOT / "plugins/qtim/skills/qtim-doctor/SKILL.md": (
         "PM-only roster без reviewer/testing не является drift",
@@ -499,12 +503,6 @@ contract_markers = {
     ROOT / "plugins/qtim/skills/qtim-setup/SKILL.md": (
         "Каждая custom role без bundled template независимо от responsibility получает",
         "дословный `## Language` contract",
-    ),
-    ROOT / "plugins/qtim/reference/upgrade-notes.md": (
-        "## 2.14.0",
-        "Миграция с 2.13.0",
-        "foreign/ambiguous file не меняй",
-        "stamps всех сопоставленных qtim role TOML до `2.14.0`",
     ),
 }
 for path, markers in contract_markers.items():

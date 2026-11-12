@@ -7,7 +7,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "root=$(git rev-parse --show-toplevel 2>/dev/null || pwd); sh \"$PLUGIN_ROOT/hooks/session-start.sh\" \"$root\"",
+            "command": "sh \"$PLUGIN_ROOT/hooks/session-start.sh\"",
             "commandWindows": "powershell -NoProfile -ExecutionPolicy Bypass -File \"%PLUGIN_ROOT%\\hooks\\session-start.ps1\"",
             "statusMessage": "Checking qtim charter",
             "timeout": 15

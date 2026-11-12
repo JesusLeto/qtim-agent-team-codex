@@ -1,4 +1,4 @@
-<!-- qtim-version: 2.18.0 -->
+<!-- qtim-version: 2.18.1 -->
 # qtim team charter — fullstack golden
 
 ## Roles and model matrix
@@ -17,7 +17,7 @@ database/frontend/product `gpt-6-sol` + `high`; testing/explorer `gpt-6-luna` + 
 
 ## Language
 
-Reason internally and message peer agents in **English** — token economy (Cyrillic ≈1.5–2× more tokens per equivalent content). Keep **user-facing output in Russian**: contract documents, review findings, and anything relayed to the client.
+Reason internally and message peer agents in **English**. Keep **user-facing output in Russian**: contract documents, review findings, and anything relayed to the client.
 
 ## Working rules
 
