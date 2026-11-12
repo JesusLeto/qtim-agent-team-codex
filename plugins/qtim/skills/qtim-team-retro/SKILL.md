@@ -5,9 +5,10 @@ description: "Use after a substantial qtim epic when its verified findings conta
 
 # qtim Team Retro
 
-Ты проводишь ретроспективу завершённого эпика после финального APPROVED
-reviewer'а — **до** `$qtim-team-down`. Цель — сохранить только проверяемые
-уроки, которые изменят действие в следующем эпике.
+Ты проводишь ретроспективу завершённого эпика — **до** `$qtim-team-down`.
+Все обязательные gates должны быть закрыты; допустимый skipped optional review
+не мешает retro. Укажи фактический review status, не называй skipped APPROVED.
+Цель — сохранить только проверяемые уроки, меняющие действие в следующем эпике.
 
 Retro — для эпиков режима C/D (`$qtim-team-lazy` с эскалацией / `$qtim-team-up`)
 с реальными повторными находками или полезным изменением процесса. На A/B и

@@ -31,7 +31,9 @@ its unrelated content. Do not invent a `checked` value or silently convert every
 claim; report the file for an explicit `$qtim-kb-refresh` migration. New files
 use the format above from the start.
 
-After the header, write a title and one navigator line: `> **Когда читать:** … · **Не здесь:** …`. Preserve filenames and `##` headings used by consumers. Keep entry files around 1200 words; the scanner warns over 1800. Move episodic closed material to `memory/journal/<relative memory path with / replaced by ->.md>` and leave a short router in the entry. Do not re-summarize the journal in the entry.
+After the header, write a title. Add `> **Когда читать:** … · **Не здесь:** …` only for routing information not already in `description`; preserve unique links and exclusions when shortening an existing navigator. Preserve filenames and `##` headings used by consumers. Keep entry files around 1200 words; the scanner warns over 1800. Move episodic closed material to `memory/journal/<relative memory path with / replaced by ->.md>` and leave a short router in the entry. Do not re-summarize the journal in the entry.
+
+`memory/missions/` belongs to the mission lifecycle and its portable schema. Do not add entry-memory frontmatter or `checked` stamps there; retain these files in snapshots and loss checks.
 
 ## Claims and anchors
 

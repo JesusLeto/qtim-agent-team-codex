@@ -59,7 +59,8 @@ fallback. Self-review автора независимый проход не за
 
 ## Bounded Code Review And Remediation
 
-Keep the first `qtim-reviewer` pass for each implementation phase. For a
+Apply this protocol only when a code-review gate applies under **When To Use**.
+Keep its first `qtim-reviewer` pass. For a
 `NOT APPROVED` verdict, main thread verifies findings against the code and the
 Approved scope, then gives the owning role a bounded fix. A finding outside the
 ticket or an explicit user constraint becomes a separate task; it does not
@@ -106,7 +107,14 @@ Main thread, а не architect:
 
 ## When To Use
 
-Ниже — отдельная политика **для фактического code diff**. Independent code review is mandatory to request when the diff matches any item in this canonical high-risk matrix:
+Обязательные project/phase/ticket gates действуют независимо от optional
+CODE_REVIEW; SPEC_REVIEW и ADR stress-test — отдельные обязательные gates.
+Для optional CODE_REVIEW сначала проверь, включён ли он в charter. Если выключен
+и обязательного code-review gate нет, reviewer не запускается; запиши
+`independent review: skipped (disabled in charter)`.
+
+Для включённого CODE_REVIEW запрос обязателен, когда фактический diff совпадает
+с любым пунктом canonical high-risk matrix:
 
 - security/auth/tenant-scope visibility;
 - money/billing/account state;
@@ -116,9 +124,9 @@ Main thread, а не architect:
 - high-risk performance/reliability changes;
 - another demonstrably hard-to-rollback decision.
 
-For a low-risk diff limited to copy, styles, documentation or an internal refactor without contract/invariant changes, the reviewer may skip it and must record `independent review: skipped (low-risk diff)`. Setup, role templates and orchestration copy this matrix without adding or removing categories.
+For a low-risk diff limited to copy, styles, documentation or an internal refactor without contract/invariant changes, optional review may be skipped; record `independent review: skipped (low-risk diff)`. This does not waive a mandatory gate. Consumers use this matrix without adding or removing categories.
 
-For money-critical work, require convergence of two independent traces when runtime review is available. If it cannot run, record the failure and follow the fail-open/fail-closed policy from the project charter; do not silently call the gate passed.
+For an applicable money-critical review, require convergence of two independent traces when runtime review is available. If it cannot run, record the failure and follow the fail-open/fail-closed policy from the project charter; do not silently call the gate passed.
 
 Один отдельный clean-context read-only reviewer может одновременно закрыть
 обязательный phase review и risk-based independent code review, если его source

@@ -215,7 +215,7 @@ for event in ("SessionStart", "SubagentStop"):
                         windows_contract += "\n" + script_path.read_text(encoding="utf-8")
                     if "%PLUGIN_ROOT%" not in command_windows:
                         fail(bundled_path, f"{event}.commandWindows не использует %PLUGIN_ROOT%")
-            if not screenshot_gate and "git rev-parse --show-toplevel" not in command:
+            if event == "SubagentStop" and not screenshot_gate and "git rev-parse --show-toplevel" not in command:
                 fail(bundled_path, f"{event} не резолвит charter от git root")
             if not screenshot_gate and (
                 "git rev-parse --show-toplevel" not in windows_contract

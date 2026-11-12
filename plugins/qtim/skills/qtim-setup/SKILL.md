@@ -135,7 +135,7 @@ PM/Analyst-состав определяется стеком: `qtim-product`, `
 - fixed stack and commands;
 - roles table: role, Codex custom agent name, mission, triggers, do-not-touch, read-on-start, external skills, mandatory practices; bundled practices из Layer 0 записываются по ролям, но не смешиваются с optional external skills. Значения minimal-diff возьми из Phase 1b: design-варианты у architect, решение до реализации у code-writing roles, recommendation-only review у reviewer;
 - model matrix отдельным блоком под roles table: team-lead `gpt-6-astra` + `ultra`; architect/reviewer `gpt-6-astra` + `xhigh`; database/frontend/product `gpt-6-sol` + `high`; testing `gpt-6-luna` + `medium`; built-in explorer `gpt-6-luna` + `medium`; ADR adversary `gpt-6-astra` + `xhigh` (`max` для необратимого решения, затрагивающего документированный инвариант). Для ролей с TOML источником истины служит файл; для explorer и ephemeral adversary — charter;
-- отдельный общий блок `## Language` вне track markers с дословным обязательным правилом: `Reason internally and message peer agents in **English** — token economy (Cyrillic ≈1.5–2× more tokens per equivalent content). Keep **user-facing output in Russian**: contract documents, review findings, and anything relayed to the client.`;
+- отдельный общий блок `## Language` вне track markers с дословным обязательным правилом: `Reason internally and message peer agents in **English**. Keep **user-facing output in Russian**: contract documents, review findings, and anything relayed to the client.`;
 - domain invariants;
 - ADR stress-test — отдельный обязательный блок независимо от настройки code review: каждый ADR до approval проходит `$qtim-grill`, затем новый read-only thread без истории на Astra+xhigh; необратимое + документированный инвариант -> Astra+max; итоговая строка `adr-stress-test:` в ADR, технический пропуск записывается как `skipped` и не считается pass;
 - independent code-review gates — при включённом гейте перенеси в charter без сокращений canonical high-risk matrix из `../../reference/independent-review.md`: security/auth/tenant-scope visibility; money/billing/account state; documented domain invariants/public contracts; data-transform/destructive migrations; critical browser flows; high-risk performance/reliability; другое доказанно hard-to-rollback изменение. Добавь bounded review contract: первый reviewer pass на фазу, максимум два fix-and-recheck раунда, затронутые проверки и full rerun только при изменении risk surface или расширении поведения за пределы проверенного diff; обязательный security review сохраняется. При выключенном — секция из одной строки-заглушки «independent review кода выключен (выбор setup); включить — повторный `$qtim-setup`». Рядом явно напиши, что ADR stress-test и SPEC_REVIEW PM track остаются включены;
@@ -314,7 +314,7 @@ qtim-owned contract держи строго между маркерами:
 
 ## Language
 
-Reason internally and message peer agents in **English** — token economy (Cyrillic ≈1.5–2× more tokens per equivalent content). Keep **user-facing output in Russian**: contract documents, review findings, and anything relayed to the client.
+Reason internally and message peer agents in **English**. Keep **user-facing output in Russian**: contract documents, review findings, and anything relayed to the client.
 
 <!-- qtim:contract:end -->
 ```

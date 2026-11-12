@@ -2,6 +2,23 @@
 
 Версии соответствуют `version` в `plugins/qtim/.codex-plugin/plugin.json` (semver).
 
+## 2.18.1 — 2026-11-12
+
+- Reviewer sandbox проверяется как top-level TOML-поле; migration fixtures
+  обнаруживают изменение байтов чужих файлов и все обязательные markers.
+- Удалены повторные assertions, количественное пояснение языковых директив,
+  пустые golden-логи и повторное определение root в POSIX SessionStart.
+  Старый языковой блок совместим; реальные проектные логи сохраняются.
+- Сканер различает entry memory и mission evidence, сохраняет snapshots
+  и обнаруживает потерю короткого `open:` или его перенос в архив.
+  Navigator нужен только для сведений сверх description.
+- Lazy эскалирует по циклам доработки; applicability CODE_REVIEW определена
+  в одном reference. Обязательные gates сохраняются, допустимый skipped review
+  не мешает retro с проверенным уроком. Handoff другого эпика не импортируется
+  и не перезаписывается. Product-onboard ссылается на текущий feature workflow.
+- На Python <3.11 проверка agent TOML принимает канонический плоский qtim
+  template; прочий синтаксис отклоняется. Для полного TOML нужен Python 3.11+.
+
 ## 2.18.0 — 2026-11-11
 
 - Новые утверждённые планы qtim-feature принимаются по этапам. Проверенный

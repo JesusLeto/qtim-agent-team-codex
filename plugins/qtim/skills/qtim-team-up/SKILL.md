@@ -42,7 +42,13 @@ Mandatory review сохраняется; Accepted/advance также прина�
    - `../../reference/independent-review.md`;
    - `../../reference/model-profiles.md`.
    Проверь профиль main task, если runtime exposes metadata: qtim team-lead должен работать на `gpt-6-astra` + `ultra`. Если профиль другой, остановись до fan-out и попроси пользователя открыть новую задачу с Astra/Ultra; qtim не переключает текущий task скрыто.
-4. Проверь `memory/epic-state.md` (его пишет `$qtim-team-down` при незавершённом эпике): если файл есть и эпик не закрыт — после подъёма команды покажи резюме и предложи продолжить с зафиксированного места, восстановив задачи из «В полёте» в видимом плане с их ролями.
+4. До импорта `memory/epic-state.md` установи identity текущей работы из
+   разрешённого scope: Tracker key либо repo-relative путь feature.
+   Сравни с `Epic identity` в handoff. Только при подтверждённом совпадении
+   восстанавливай «В полёте» и предлагай продолжить этот эпик. Для legacy без
+   identity нужны подтверждающий контракт или решение владельца; одного
+   похожего названия недостаточно. При mismatch/неизвестной identity сохрани
+   файл и не импортируй его задачи в текущий план.
 5. Для `docs/features/<slug>/` сначала прочитай `spec.md` и
    `../../reference/feature-pipeline.md`: проверь текущие Reviewed revision,
    Approved revision и готовность handoff; незакрытый spec gate возвращает к
@@ -155,7 +161,8 @@ For implementation agents, remind them that other agents may edit in parallel an
 7. В feature-ticket mode передай checked candidate/quiescence исходному coordinator
    и ожидай его review/fix decision; local reviewer/fix-and-recheck шаг ниже
    не выполняется. Исправления требуют его свежего bounded write-go.
-   Для остальных режимов: для предусмотренного code-review gate reviewer делает первый проход на
+   Для остальных режимов: применимость code-review gate определяет
+   `../../reference/independent-review.md#when-to-use`; reviewer делает первый проход на
    стабильную границу WI/пакета и проверяет
    актуальность receipts; отсутствующие или устаревшие gates выполняет их
    назначенный владелец. Подтверждённые блокеры проходят не больше двух
@@ -163,11 +170,7 @@ For implementation agents, remind them that other agents may edit in parallel an
    lazy → team-up сохраняют уже выполненные passes и бюджет. Остался блокер —
    `Blocked` с evidence и решением владельца. Находки вне Approved scope передай
    как отдельные задачи; конфликт с acceptance/security gate — `Blocked`.
-   При активном code review в charter применяй canonical high-risk matrix из
-   `independent-review.md`: текущий независимый reviewer закрывает тот же scope,
-   отдельная трасса нужна только по фактическому риску/контракту. Low-risk diff
-   допускает `skipped (low-risk diff)`. Выключенный code review не выключает
-   обязательные SPEC_REVIEW и ADR stress-test.
+
 8. Main agent integrates and checks all results. Subagent output is input, not authority.
 9. Commit durable decisions to `memory/`.
 
@@ -185,7 +188,7 @@ Final report should be result-first:
 - memory files updated;
 - для standalone feature — выполненные WI и Status `spec.md`, существенные дельты и
   `.work/validation.md`; для legacy — прогресс в `.work/` без правок контракта;
-- если в preconditions найден незавершённый epic-state — его резюме и предложение продолжить;
+- если identity незавершённого epic-state совпала — его резюме и предложение продолжить;
 - active agent threads closed or still running.
 
 Do not report a raw transcript of agent chatter.

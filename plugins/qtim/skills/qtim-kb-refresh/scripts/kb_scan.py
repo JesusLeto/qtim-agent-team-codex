@@ -196,8 +196,6 @@ def format_issues(repo: Path, path: Path, text: str, meta: dict[str, str], refs:
     if rel.startswith("memory/") and not rel.startswith("memory/journal/") and word_count(split_frontmatter(text)[1]) > ENTRY_WARN_WORDS:
         add("entry_budget_exceeded")
     lines = content_lines(text)
-    if rel.startswith("memory/") and not rel.startswith("memory/journal/") and not any("> **Когда читать:**" in line for _, line in lines):
-        add("navigator_missing")
     for number, line in lines:
         if LINE_REF_RE.search(line):
             add("line_anchor", number)
@@ -320,7 +318,7 @@ def scan(repo: Path, ref: str | None) -> dict[str, object]:
     mem_paths = md_files(repo, "memory")
     if not mem_paths:
         return {"schema": SCHEMA, "scan_complete": True, "errors": [],
-                "memory": {"present": False, "file_count": 0, "words": {"entry": 0, "journal": 0, "other": 0}, "total_words": 0},
+                "memory": {"present": False, "file_count": 0, "mission_files": [], "words": {"entry": 0, "journal": 0, "other": 0}, "total_words": 0},
                 "base": {"ref": ref, "sha": resolve_commit(repo, ref) if ref else None,
                          "remote_freshness_verified": False},
                 "delta": {"files": [], "stale_file_count": 0, "stale_file_claims_total": 0,
@@ -343,11 +341,16 @@ def scan(repo: Path, ref: str | None) -> dict[str, object]:
     results: list[dict[str, object]] = []
     sample_pool: list[tuple[str, dict[str, object]]] = []
     words = {"entry": 0, "journal": 0, "other": 0}
+    mission_files: list[str] = []
     stale_claims = 0
     for path in mem_paths:
         rel = path.relative_to(repo).as_posix()
         text = read_text(path)
         _, body = split_frontmatter(text)
+        if rel.startswith("memory/missions/"):
+            mission_files.append(rel)
+            words["other"] += word_count(body)
+            continue
         meta = metadata(text)
         lines = content_lines(text)
         refs = anchors(lines)
@@ -435,7 +438,7 @@ def scan(repo: Path, ref: str | None) -> dict[str, object]:
         "base": {"ref": base_ref, "sha": base_sha, "source": "argument" if ref else "origin_head",
                  "remote_freshness_verified": False},
         "memory": {"present": bool(mem_paths), "file_count": len(mem_paths), "words": words,
-                   "total_words": sum(words.values())},
+                   "total_words": sum(words.values()), "mission_files": mission_files},
         "delta": {"files": results, "stale_file_count": sum(bool(r["stale"]) for r in results),
                   "stale_file_claims_total": stale_claims,
                   "base_choice_required": any(r["sha_state"] in ("not_ancestor", "unresolved") for r in results),
@@ -675,25 +678,28 @@ def lost(repo: Path, supplied: str) -> dict[str, object]:
     before, manifest = before_snapshot(repo, supplied)
     old = knowledge_texts(before)
     current = knowledge_texts(repo)
+    def active_entry(rel: str, text: str) -> bool:
+        return PurePosixPath(rel).parent == PurePosixPath("memory") and metadata(text).get("status") != "archive"
+
+    old_active = {rel for rel, text in old.items() if active_entry(rel, text)}
     old_units = [(rel, unit) for rel, text in old.items() for unit in text_units(text)]
     current_all: set[str] = set()
     current_active: set[str] = set()
     for rel, text in current.items():
+        active = active_entry(rel, text)
         for unit in text_units(text):
             norm = normalized_unit(unit)
             current_all.add(norm)
-            if not rel.startswith("memory/journal/"):
+            if active:
                 current_active.add(norm)
     open_lost: list[dict[str, str]] = []
     candidates: list[dict[str, str]] = []
     for rel, unit in old_units:
         norm = normalized_unit(unit)
-        if len(norm) < 25:
-            continue
-        if OPEN_RE.search(unit):
+        if rel in old_active and OPEN_RE.search(unit):
             if norm not in current_active:
                 open_lost.append({"file": rel, "text": unit[:600]})
-        elif norm not in current_all:
+        elif len(norm) >= 25 and norm not in current_all:
             candidates.append({"file": rel, "text": unit[:600]})
     before_counts = knowledge_counts(old)
     after_counts = knowledge_counts(current)

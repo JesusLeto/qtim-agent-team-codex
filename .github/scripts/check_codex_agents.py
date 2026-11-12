@@ -4,10 +4,7 @@ import pathlib
 import re
 import sys
 
-try:
-    import tomllib  # Python 3.11+
-except ImportError:
-    tomllib = None
+from agent_toml import load_agent_toml
 
 REQUIRED = {"name", "description", "developer_instructions"}
 EXPECTED_MODEL_POLICIES = {
@@ -64,9 +61,9 @@ EXPECTED_MARKERS = {
     ],
     "testing.toml": ["$qtim-debug-loop", "{{DEV_CMD}}", "dev server command/status"],
 }
+LANGUAGE_RATIONALE = " — token economy (Cyrillic ≈1.5–2× more tokens per equivalent content)"
 LANGUAGE_CONTRACT = (
-    "Reason internally and message peer agents in **English** — token economy "
-    "(Cyrillic ≈1.5–2× more tokens per equivalent content). Keep **user-facing "
+    "Reason internally and message peer agents in **English**. Keep **user-facing "
     "output in Russian**: contract documents, review findings, and anything relayed "
     "to the client."
 )
@@ -92,14 +89,14 @@ root = pathlib.Path("plugins/qtim/agents")
 paths = sorted(root.glob("*.toml"))
 
 for path in paths:
-    text = path.read_text(encoding="utf-8")
+    raw = path.read_bytes().decode("utf-8")
+    text = raw.replace("\r\n", "\n")
 
-    if tomllib is not None:
-        try:
-            tomllib.loads(text)
-        except tomllib.TOMLDecodeError as err:
-            bad.append(f"{path}: invalid TOML: {err}")
-            continue
+    try:
+        parsed = load_agent_toml(raw)
+    except ValueError as err:
+        bad.append(f"{path}: invalid or unsupported agent TOML: {err}")
+        continue
 
     payload = {
         match.group(1): match.group(2).strip()
@@ -169,15 +166,14 @@ for path in paths:
             )
 
     if path.name == "reviewer.toml":
-        sandbox = re.search(r'^sandbox_mode\s*=\s*"([^"]*)"', text, re.MULTILINE)
-        if not sandbox or sandbox.group(1) != "read-only":
+        if parsed.get("sandbox_mode") != "read-only":
             bad.append(f"{path}: reviewer must enforce `sandbox_mode = \"read-only\"`")
 
     for marker in EXPECTED_MARKERS.get(path.name, []):
         if marker not in text:
             bad.append(f"{path}: missing current qtim discipline marker `{marker}`")
 
-    if "## Language" not in text or LANGUAGE_CONTRACT not in text:
+    if "## Language" not in text or LANGUAGE_CONTRACT not in text.replace(LANGUAGE_RATIONALE, ""):
         bad.append(f"{path}: missing exact mandatory qtim language contract")
 
 if not paths:
@@ -256,7 +252,7 @@ for contract_path, markers in LANGUAGE_SURFACES.items():
     if not contract_path.exists():
         bad.append(f"{contract_path}: missing qtim language surface")
         continue
-    contract_text = contract_path.read_text(encoding="utf-8")
+    contract_text = contract_path.read_text(encoding="utf-8").replace(LANGUAGE_RATIONALE, "")
     for marker in markers:
         if marker not in contract_text:
             bad.append(f"{contract_path}: missing language marker `{marker}`")

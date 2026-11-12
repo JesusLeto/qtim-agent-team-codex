@@ -127,10 +127,13 @@ prerequisite — Astra+Ultra. Используй exact pair из role TOML и fa
 
 - tester finds bugs that require implementation rework;
 - reviewer подтвердил in-scope blocker, требующий цикла исправления;
-- more roles become necessary than originally expected;
-- an irreversible or ambiguous product decision appears.
 
-В feature-ticket mode эти условия возвращаются feature coordinator для решения
+Дополнительная уже разрешённая роль без цикла доработки не меняет lazy mode.
+Новая роль вне разрешённого scope или необратимая/неоднозначная продуктовая
+развилка сначала возвращается владельцу; после решения оцени глубину координации
+заново, не запускай full team-up только из-за числа ролей.
+
+В feature-ticket mode циклы, новые роли и продуктовые развилки возвращаются feature coordinator для решения
 в пределах текущего ticket; local main не эскалирует workflow самостоятельно.
 В mission-child mode все эти условия возвращаются coordinator как
 `ESCALATION_REQUEST`; node lead не запускает `$qtim-team-up` и не расширяет

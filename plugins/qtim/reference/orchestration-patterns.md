@@ -59,7 +59,8 @@ contract из `feature-pipeline.md`; новый исполнитель сам п
 Legacy `plan.md`/`prd.md` или `feature-brief.md` остаются читаемым контрактом без
 автоматической конвертации и правок; прогресс храни в `.work/validation.md`.
 
-На стабильную границу work item/пакета сохраняй первый проход `qtim-reviewer`;
+Для применимого code-review gate по `independent-review.md#when-to-use`
+на стабильную границу work item/пакета сохраняй первый проход `qtim-reviewer`;
 цикл исправлений ограничен `independent-review.md`. Передавай счётчик при
 resume, смене агента и lazy → team-up. Обязательные security checks,
 acceptance gates и ADR adversary остаются в силе.
@@ -172,9 +173,10 @@ Rules:
 
 Каждый ADR до approval проходит через новый read-only thread без истории на `gpt-6-astra` + `xhigh`; для необратимого решения, задевающего документированный инвариант, — `max`. Это постоянный design gate, независимо от настройки code review.
 
-Для фактического diff действует каноническая high-risk matrix из `independent-review.md`: security/auth/tenant-scope visibility; money/billing/account state; documented domain invariants/public contracts; data-transform/destructive migrations; critical browser flows; high-risk performance/reliability; другое доказанно hard-to-rollback изменение. При любом совпадении запрос review обязателен. Для low-risk diff отдельный thread опционален; пропуск фиксируется в review report.
+Применимость CODE_REVIEW, high-risk matrix и допустимый skipped определяет
+[When To Use](independent-review.md#when-to-use).
 
-Use `independent-review.md`. Spawn only the read-only reviewer threads needed
+Spawn only the read-only reviewer threads needed
 for the actual risk, with a narrow prompt. They do not edit code. Main thread
 verifies every finding and applies its bounded remediation policy.
 
@@ -195,7 +197,9 @@ Rules:
 
 ### Recipe: Ensemble Review (паттерны 4 + 5)
 
-Когда: перед мержем крупного или рискованного эпика; для money/security-critical — обязателен до APPROVED.
+Когда: перед мержем крупного или рискованного эпика с применимым review gate по
+[When To Use](independent-review.md#when-to-use); money/security-critical review
+закрой до APPROVED.
 
 1. **Линзы (параллельно, read-only).** Выбери линзы по фактическому риску diff;
    список ниже — меню, а не обязательный fan-out. Каждый reviewer получает scope
