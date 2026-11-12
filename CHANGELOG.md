@@ -2,7 +2,7 @@
 
 Версии соответствуют `version` в `plugins/qtim/.codex-plugin/plugin.json` (semver).
 
-## 2.18.1 — не выпущена
+## 2.18.1 — 2026-11-12
 
 - Reviewer sandbox проверяется как top-level TOML-поле; migration fixtures
   обнаруживают изменение байтов чужих файлов и все обязательные markers.
